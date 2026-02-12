@@ -1,9 +1,9 @@
 import { Github, Linkedin, Youtube, Mail } from "lucide-react";
 
 const links = [
-  { name: "Canal no YouTube", url: "https://youtube.com/...", icon: Youtube, color: "hover:text-red-500" },
-  { name: "GitHub", url: "https://github.com/...", icon: Github, color: "hover:text-white" },
-  { name: "LinkedIn", url: "https://linkedin.com/in/...", icon: Linkedin, color: "hover:text-blue-500" },
+  { name: "Canal no YouTube", url: "https://youtube.com/@ronaldandrade5395?si=6s2UynVKMm69tl1v", icon: Youtube, color: "hover:text-red-500" },
+  { name: "GitHub", url: "https://github.com/ronaldandrade", icon: Github, color: "hover:text-white" },
+  { name: "LinkedIn", url: "https://www.linkedin.com/in/ronaldandrademendonca/", icon: Linkedin, color: "hover:text-blue-500" },
 ];
 
 export default function LinksPage() {
