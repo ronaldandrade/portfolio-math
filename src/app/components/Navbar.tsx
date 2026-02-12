@@ -23,7 +23,7 @@ export default function Navbar() {
       <div className="max-w-5xl mx-auto px-6 h-16 flex justify-between items-center">
         
         <Link href="/" className="text-xl font-bold tracking-tighter">
-          Ronald<span className="text-primary">.Math</span>
+          Rams<span className="text-primary">.Log</span>
         </Link>
 
         {/* Desktop Menu */}
