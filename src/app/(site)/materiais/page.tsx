@@ -11,10 +11,10 @@ const materials = [
   },
   {
     id: 2,
-    title: "Template LaTeX para Artigos Científicos",
-    description: "Estrutura pronta para uso no Overleaf, focada em clareza e normas ABNT.",
-    type: "ZIP",
-    fileUrl: "/assets/template-latex.zip"
+    title: "Aula de Funções - Material de Apoio",
+    description: "Resumo dos principais tipos de funções, gráficos e exercícios resolvidos.",
+    type: "PDF",
+    fileUrl: "https://mymrspjrihlbrkswnzjl.supabase.co/storage/v1/object/public/materiais/MAP_09_Funcoes_primeiro_e_segundo_grau.pdf"
   }
 ];
 
