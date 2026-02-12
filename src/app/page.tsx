@@ -28,7 +28,7 @@ export default async function Home() {
           Mundo.
         </h1>
 
-        <p className="text-lg text-slate-400 mb-10 max-w-2xl leading-relaxed">
+        <p className="text-lg text-slate-400 mb-10 max-w-2xl leading-relaxed mx-auto">
           Bem-vindo ao meu portfólio. Aqui compartilho minha jornada transitando
           entre a lógica matemática e a criatividade dos algoritmos de Machine
           Learning.
