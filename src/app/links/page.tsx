@@ -2,9 +2,9 @@ import { Github, Linkedin, Youtube, BookOpen } from "lucide-react"; // Instale l
 
 export default function LinksPage() {
   const links = [
-    { name: "Canal no YouTube", url: "#", icon: Youtube, color: "hover:bg-red-600 hover:border-red-600" },
-    { name: "Meu GitHub", url: "#", icon: Github, color: "hover:bg-slate-700 hover:border-slate-700" },
-    { name: "LinkedIn Profissional", url: "#", icon: Linkedin, color: "hover:bg-blue-600 hover:border-blue-600" },
+    { name: "Canal no YouTube", url: "https://youtube.com/@ronaldandrade5395?si=6s2UynVKMm69tl1v", icon: Youtube, color: "hover:bg-red-600 hover:border-red-600" },
+    { name: "Meu GitHub", url: "https://github.com/ronaldandrade", icon: Github, color: "hover:bg-slate-700 hover:border-slate-700" },
+    { name: "LinkedIn Profissional", url: "https://www.linkedin.com/in/ronaldandrademendonca/", icon: Linkedin, color: "hover:bg-blue-600 hover:border-blue-600" },
     { name: "Materias de Estudo", url: "/materiais", icon: BookOpen, color: "hover:bg-purple-600 hover:border-purple-600" },
     { name: "Ler meus Artigos", url: "/blog", icon: BookOpen, color: "hover:bg-emerald-600 hover:border-emerald-600" },
   ];

@@ -19,19 +19,19 @@ export default function Footer() {
 
         {/* Lado Direito: Sociais */}
         <div className="flex gap-6">
-          <Link href="#" className="text-slate-400 hover:text-white transition-colors">
+          <Link href="https://youtube.com/@ronaldandrade5395?si=6s2UynVKMm69tl1v" className="text-slate-400 hover:text-white transition-colors">
             <Youtube size={20} />
             <span className="sr-only">YouTube</span>
           </Link>
-          <Link href="#" className="text-slate-400 hover:text-white transition-colors">
+          <Link href="https://www.linkedin.com/in/ronaldandrademendonca/" className="text-slate-400 hover:text-white transition-colors">
             <Linkedin size={20} />
             <span className="sr-only">LinkedIn</span>
           </Link>
-          <Link href="#" className="text-slate-400 hover:text-white transition-colors">
+          <Link href="https://github.com/ronaldandrade" className="text-slate-400 hover:text-white transition-colors">
             <Github size={20} />
             <span className="sr-only">GitHub</span>
           </Link>
-          <Link href="mailto:seuemail@exemplo.com" className="text-slate-400 hover:text-white transition-colors">
+          <Link href="mailto:mendoncapy@gmail.com" className="text-slate-400 hover:text-white transition-colors">
             <Mail size={20} />
             <span className="sr-only">Email</span>
           </Link>
