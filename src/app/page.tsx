@@ -35,15 +35,22 @@ export default async function Home() {
         </p>
         <div className="flex justify-center gap-4">
           <Link 
-            href="/sobre" 
+            href="/conteudos" 
             className="border border-border text-foreground px-6 py-3 rounded-full font-semibold hover:border-primary hover:text-primary transition-all"
           >
-            Conheça minha história
+            Meus Vídeos
           </Link>
+                    <Link 
+            href="/blog" 
+            className="border border-border text-foreground px-6 py-3 rounded-full font-semibold hover:border-primary hover:text-primary transition-all"
+          >
+            Artigos
+          </Link>
+
         </div>
       </div>
 
-      {/* O Carrossel agora recebe dados VIVOS das APIs */}
+      {/* O Carrossel recebe dados VIVOS das APIs */}
       <HomeCarousel 
         latestPost={latestPost} 
         latestVideo={latestVideo} 
