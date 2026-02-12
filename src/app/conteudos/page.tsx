@@ -2,10 +2,7 @@ export default function ConteudosPage() {
   // Simulação de dados (depois virá do YouTube API ou banco de dados)
   const videos = [
     { id: 1, title: "Aula de Porcentagem", date: "Fev 2026", url: "https://youtube.com/embed/Jb1W0EzuEME?si=WyOPuEz91Lxcxldc" },
-    { id: 2, title: "Matemática do Machine Learning", date: "Jan 2026", url: "https://www.youtube.com/embed/watch?v=zCsEQSQ1XEc" },
-    { id: 3, title: "Criando Redes Neurais do Zero", date: "Dez 2025", url: "https://www.youtube.com/embed/SEU_ID_VIDEO_AQUI" },
-    { id: 4, title: "Visualizando Dados com Python", date: "Nov 2025", url: "https://www.youtube.com/embed/SEU_ID_VIDEO_AQUI" },
-    { id: 5, title: "Criando Redes Neurais do Zero", date: "Dez 2025", url: "https://www.youtube.com/embed/SEU_ID_VIDEO_AQUI" },
+    { id: 2, title: "Sistemas de Equações", date: "Jan 2026", url: "https://www.youtube.com/embed/zCsEQSQ1XEc?si=GVf9JOZPfDEpV5cP" },
   ];
 
   return (
