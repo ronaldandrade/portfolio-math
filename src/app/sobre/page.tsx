@@ -19,8 +19,7 @@ export default function SobrePage() {
         </p>
 
         <p>
-          Este site é o repositório central dos meus estudos, projetos (como meu scraper de notícias)
-          e do meu futuro livro sobre Machine Learning para iniciantes.
+          Este site é o repositório central dos meus estudos, projetos, pesquisas e artigos sobre tecnologia e matemática.
         </p>
       </div>
 
@@ -28,7 +27,7 @@ export default function SobrePage() {
       <div className="mt-12">
         <h2 className="text-xl font-semibold text-white mb-4">Tech Stack</h2>
         <div className="flex flex-wrap gap-2">
-          {["Python", "Deep Learning", "Computer Vision", "Next.js", "LaTeX", "Manim"].map((tech) => (
+          {["Python", "Deep Learning", "Computer Vision", "JavaScript", "LaTeX", "Manim"].map((tech) => (
             <span key={tech} className="px-3 py-1 bg-slate-800 rounded-md text-sm text-blue-200">
               {tech}
             </span>
