@@ -39,9 +39,8 @@ export async function generateMetadata({ params }: Props) {
   };
 }
 
-// --- MUDANÇA 3: O componente da página deve ser async e aguardar params ---
 export default async function PostPage({ params }: Props) {
-  const { slug } = await params; // Await obrigatório no Next.js 15+
+  const { slug } = await params; 
   
   // Tratamento de erro caso o slug não exista
   if (!slug) {

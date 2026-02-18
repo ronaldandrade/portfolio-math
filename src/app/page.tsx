@@ -24,12 +24,11 @@ export default async function Home() {
         </span>
 
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 text-white">
-          Desvendando a <br className="hidden md:block" /> complexidade do
-          Mundo.
+          Olá! Me chamo <span className="text-blue-400">Ronald</span>, e este é meu portfólio.
         </h1>
 
-        <p className="text-lg text-slate-400 mb-10 max-w-2xl leading-relaxed mx-auto">
-          Bem-vindo ao meu portfólio. Aqui compartilho minha jornada transitando
+        <p className="text-lg text-slate-300 mb-10 max-w-2xl leading-relaxed mx-auto">
+          Aqui compartilho minha jornada transitando
           entre a lógica matemática e a criatividade dos algoritmos de Machine
           Learning.
         </p>

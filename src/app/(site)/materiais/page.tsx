@@ -1,6 +1,5 @@
 import { DownloadGate } from "../../components/features/DownloadGate";
 
-// Dados mockados (idealmente viriam de um CMS ou arquivo JSON)
 const materials = [
   {
     id: 1,

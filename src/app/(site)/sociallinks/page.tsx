@@ -1,4 +1,4 @@
-import { Github, Linkedin, Youtube, Mail } from "lucide-react";
+import { Github, Linkedin, Youtube } from "lucide-react";
 
 const links = [
   { name: "Canal no YouTube", url: "https://youtube.com/@ronaldandrade5395?si=6s2UynVKMm69tl1v", icon: Youtube, color: "hover:text-red-500" },
