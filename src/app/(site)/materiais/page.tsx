@@ -3,10 +3,10 @@ import { DownloadGate } from "../../components/features/DownloadGate";
 const materials = [
   {
     id: 1,
-    title: "Aula de Porcentagem - Livro de Apoio",
-    description: "Um guia rápido com as principais fórmulas e exemplos práticos sobre porcentagem.",
+    title: "Ebook: Machine Learning para Iniciantes",
+    description: "Meu guia introdutório sobre os fundamentos do machine learning, com exemplos práticos e código comentado.",
     type: "PDF",
-    fileUrl: "https://mymrspjrihlbrkswnzjl.supabase.co/storage/v1/object/public/materiais/MAP_08_Porcentagem_livro_apoio.pdf"
+    fileUrl: "https://mymrspjrihlbrkswnzjl.supabase.co/storage/v1/object/public/materiais/Fundamentos_de_Machine_Learning_para_Iniciantes.pdf"
   },
   {
     id: 2,
@@ -14,7 +14,15 @@ const materials = [
     description: "Resumo dos principais tipos de funções, gráficos e exercícios resolvidos.",
     type: "PDF",
     fileUrl: "https://mymrspjrihlbrkswnzjl.supabase.co/storage/v1/object/public/materiais/MAP_09_Funcoes_primeiro_e_segundo_grau.pdf"
-  }
+  },
+  {
+    id: 3,
+    title: "Aula de Porcentagem - Livro de Apoio",
+    description: "Um guia rápido com as principais fórmulas e exemplos práticos sobre porcentagem.",
+    type: "PDF",
+    fileUrl: "https://mymrspjrihlbrkswnzjl.supabase.co/storage/v1/object/public/materiais/MAP_08_Porcentagem_livro_apoio.pdf"
+  },
+  
 ];
 
 export default function MaterialsPage() {
