@@ -1,0 +1,161 @@
+---
+title: 'Redes Neurais Profundas: do Perceptron ao Fim a Fim'
+date: '2026-02-13'
+description: 'Por que redes neurais profundas oferecem uma arquitetura uniforme e diferenciável, treinada de ponta a ponta com gradiente descendente e backpropagation.'
+tags: ['Matemática', 'Deep Learning', 'Computer Vision', 'Python']
+author: 'Ronald Andrade'
+readingTime: '12 min'
+difficulty: 'intermediate'
+---
+
+# Introdução
+
+Pipelines de deep learning adotam uma abordagem de ponta a ponta (*end-to-end*) para o aprendizado de máquina. Em vez de empilhar estágios isolados de pré-processamento, eles otimizam todas as etapas de uma só vez, buscando os parâmetros que minimizam a perda de treino.
+
+Para que essa busca seja viável, ajuda muito que a perda seja uma **função diferenciável** de todos esses parâmetros. As redes neurais profundas entregam exatamente isso: uma arquitetura de computação uniforme e diferenciável que, de quebra, descobre automaticamente representações internas úteis.
+
+Neste artigo vamos do bloco mais básico, o perceptron, até o mecanismo que torna o treinamento possível em escala: o gradiente descendente via *backpropagation*. Ao final, montamos uma pequena rede em Python.
+
+## Um Pouco de História
+
+O interesse em construir sistemas que imitam a computação neural biológica vai e volta desde o fim dos anos 1950, quando Rosenblatt (1958) desenvolveu o **perceptron** e Widrow e Hoff (1960) derivaram a regra delta de adaptação de pesos.
+
+A área foi revitalizada no fim dos anos 1970 pelos pesquisadores que se chamavam **conexionistas**, cujos encontros levaram à fundação da conferência NeurIPS, em 1987. O artigo seminal sobre *backpropagation* (Rumelhart, Hinton e Williams, 1986) lançou a base para o treinamento das redes feedforward modernas.
+
+As redes neurais profundas mais populares hoje são redes **feedforward discriminativas e determinísticas**, com ativações de valor real, treinadas por gradiente descendente. Combinadas às ideias das redes convolucionais (Fukushima, 1980; LeCun, Bottou et al., 1998), elas produziram os avanços em reconhecimento de fala e visão observados no início da década de 2010.
+
+## O Perceptron: a Unidade Básica
+
+Tudo começa com uma única unidade. Um perceptron recebe um vetor de entradas $\mathbf{x} = (x_1, \dots, x_n)$, multiplica cada entrada por um peso, soma um viés $b$ e aplica uma função de ativação não linear $\sigma$.
+
+![Uma unidade perceptron: (a) mostrando explicitamente os pesos multiplicados pelas entradas, (b) com os pesos escritos nas conexões de entrada, e (c) a forma mais comum, com pesos e viés omitidos. Uma função de ativação não linear segue a soma ponderada.](/redes_neurais_profundas.png)
+
+*Uma unidade perceptron (adaptado de Glassner, 2018). A soma ponderada das entradas é seguida por uma função de ativação não linear.*
+
+Formalmente, a saída de um neurônio é:
+
+$$
+a = \sigma\left( \sum_{i=1}^{n} w_i x_i + b \right) = \sigma\left( \mathbf{w} \cdot \mathbf{x} + b \right)
+$$
+
+Repare que o termo dentro da ativação é um **produto escalar** entre o vetor de pesos $\mathbf{w}$ e o vetor de entradas $\mathbf{x}$, exatamente a operação que exploramos em [A Beleza da Álgebra Linear](/blog/algebralinear).
+
+### Por que a Não Linearidade Importa
+
+Sem a função $\sigma$, empilhar camadas seria inútil: a composição de transformações lineares continua sendo uma transformação linear. A não linearidade é o que permite à rede aproximar funções complexas. As escolhas clássicas são:
+
+$$
+\text{sigmoide:}\quad \sigma(z) = \frac{1}{1 + e^{-z}}
+\qquad
+\text{ReLU:}\quad \sigma(z) = \max(0, z)
+$$
+
+A ReLU (*Rectified Linear Unit*) é hoje a opção padrão em redes profundas, por ser barata de calcular e por mitigar o problema do gradiente que desaparece.
+
+## Empilhando Camadas
+
+Uma rede profunda organiza esses neurônios em **camadas**. Cada camada $l$ recebe o vetor de ativações da camada anterior, aplica uma matriz de pesos $\mathbf{W}^{(l)}$ e um vetor de vieses $\mathbf{b}^{(l)}$, e passa o resultado pela ativação:
+
+$$
+\mathbf{a}^{(l)} = \sigma\left( \mathbf{W}^{(l)} \mathbf{a}^{(l-1)} + \mathbf{b}^{(l)} \right)
+$$
+
+A entrada da rede é $\mathbf{a}^{(0)} = \mathbf{x}$, e a saída da última camada é a previsão $\hat{\mathbf{y}}$. Esse fluxo da entrada para a saída é o **forward pass** (passagem direta).
+
+A grande vantagem do deep learning aparece aqui: ao contrário de outras técnicas, que dependem de vários estágios de pré-processamento para extrair features, as redes profundas são treinadas de ponta a ponta, indo direto dos pixels brutos até a saída desejada.
+
+## A Função de Perda
+
+Para treinar a rede, precisamos medir o quão erradas estão suas previsões. Essa medida é a **função de perda** $L$. Para regressão, é comum o erro quadrático médio:
+
+$$
+L = \frac{1}{m} \sum_{i=1}^{m} \left( \hat{y}_i - y_i \right)^2
+$$
+
+Para classificação, usa-se a entropia cruzada (*cross-entropy*), que penaliza previsões confiantes e erradas. O objetivo do treino é encontrar os parâmetros $\mathbf{W}$ e $\mathbf{b}$ que minimizam $L$.
+
+## Gradiente Descendente e Backpropagation
+
+Como a perda é diferenciável em relação a todos os parâmetros, podemos minimizá-la por **gradiente descendente**. A regra de atualização move cada parâmetro na direção oposta à do seu gradiente:
+
+$$
+\mathbf{W}^{(l)} \leftarrow \mathbf{W}^{(l)} - \eta \, \frac{\partial L}{\partial \mathbf{W}^{(l)}}
+$$
+
+onde $\eta$ é a taxa de aprendizado (*learning rate*), que controla o tamanho de cada passo.
+
+O desafio é calcular $\frac{\partial L}{\partial \mathbf{W}^{(l)}}$ para cada camada. A solução é a **backpropagation**, que nada mais é do que a regra da cadeia aplicada de forma sistemática, propagando o erro da saída de volta para as camadas iniciais.
+
+**Passo 1:** Calcule o erro na camada de saída, comparando a previsão $\hat{\mathbf{y}}$ com o alvo $\mathbf{y}$.
+
+**Passo 2:** Propague esse erro para trás, da camada $l$ para a camada $l-1$, usando a regra da cadeia:
+
+$$
+\frac{\partial L}{\partial \mathbf{a}^{(l-1)}} = \left( \mathbf{W}^{(l)} \right)^{\top} \frac{\partial L}{\partial \mathbf{z}^{(l)}}
+$$
+
+**Passo 3:** Com os gradientes em mãos, atualize todos os pesos e vieses pela regra do gradiente descendente.
+
+Esse ciclo (forward pass, cálculo da perda, backward pass e atualização) é repetido por milhares de iterações até a perda convergir.
+
+## Exemplo de Uso em Python
+
+Vamos treinar uma pequena rede feedforward para classificar dígitos manuscritos com o `scikit-learn`, que encapsula todo o ciclo de treino.
+
+```python
+from sklearn.datasets import load_digits
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import accuracy_score
+
+# Dataset: 1797 imagens 8x8 de dígitos (0 a 9), achatadas em 64 features
+images, labels = load_digits(return_X_y=True)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    images, labels, test_size=0.3, random_state=42
+)
+
+# Normalizar as entradas ajuda o gradiente descendente a convergir
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Rede com duas camadas ocultas (64 e 32 neurônios), ativação ReLU
+network = MLPClassifier(
+    hidden_layer_sizes=(64, 32),
+    activation="relu",
+    solver="adam",          # variante eficiente do gradiente descendente
+    learning_rate_init=0.001,
+    max_iter=300,
+    random_state=42,
+)
+network.fit(X_train, y_train)
+
+accuracy = accuracy_score(y_test, network.predict(X_test))
+print(f"Acurácia no teste: {accuracy:.3f}")
+print(f"Perda final no treino: {network.loss_:.4f}")
+```
+
+Com poucas linhas, treinamos uma rede que costuma passar de 97% de acurácia. A biblioteca cuida do forward pass, da backpropagation e da atualização dos pesos a cada iteração.
+
+### Inspecionando a Arquitetura
+
+Podemos verificar o formato das matrizes de pesos aprendidas em cada camada:
+
+```python
+for i, weights in enumerate(network.coefs_):
+    print(f"Camada {i}: matriz de pesos {weights.shape}")
+```
+
+Cada matriz conecta uma camada à seguinte, e suas dimensões refletem exatamente o número de neurônios que definimos.
+
+## Conclusão
+
+Redes neurais profundas devem seu sucesso a uma combinação simples e poderosa: unidades diferenciáveis empilhadas em camadas, treinadas de ponta a ponta por gradiente descendente. A backpropagation torna esse treinamento eficiente ao reaproveitar a regra da cadeia em todas as camadas.
+
+Do perceptron de Rosenblatt às arquiteturas convolucionais que revolucionaram a visão computacional, o princípio permanece o mesmo: ajustar pesos para reduzir uma perda diferenciável.
+
+> **Próximos passos:** explore as **redes convolucionais** (CNNs), que adaptam essa estrutura para imagens, e compare com a abordagem por particionamento que vimos em [Árvores de Decisão e Florestas Aleatórias na Prática](/blog/decisiontree).
+
+**Referências:** Rumelhart, Hinton e Williams (1986); Goodfellow, Bengio e Courville (2016); Zhang, Lipton et al. (2021, Cap. 7); Szeliski, *Computer Vision: Algorithms and Applications*, 2ª ed. (2021), Seção 5.3.
