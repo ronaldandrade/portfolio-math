@@ -12,15 +12,15 @@ export default function LinksPage() {
   return (
     <div className="flex flex-col items-center w-full max-w-md px-6 py-12 mx-auto">
       <img src="https://avatars.githubusercontent.com/u/69542454?v=4" className="w-24 h-24 bg-gradient-to-tr from-blue-500 to-purple-600 rounded-full mb-4 animate-pulse" />
-      <h1 className="text-2xl font-bold text-white">Ronald Andrade</h1>
-      <p className="text-slate-400 mb-8 text-center"> Cientista de Dados & Matemático.</p>
+      <h1 className="text-2xl font-bold text-foreground">Ronald Andrade</h1>
+      <p className="text-muted-foreground mb-8 text-center"> Cientista de Dados & Matemático.</p>
 
       <div className="w-full space-y-3">
         {links.map((link) => (
           <a
             key={link.name}
             href={link.url}
-            className={`flex items-center justify-center gap-3 w-full p-4 border border-slate-700 rounded-lg text-slate-200 font-medium transition-all ${link.color} hover:text-white`}
+            className={`flex items-center justify-center gap-3 w-full p-4 border border-border rounded-lg text-foreground font-medium transition-all ${link.color} hover:text-white`}
           >
             <link.icon size={20} />
             {link.name}

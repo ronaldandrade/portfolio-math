@@ -9,7 +9,7 @@ tags: ['Matemática', 'Python', 'AI']
 
 A Álgebra Linear é frequentemente chamada de "o cavalo de batalha" da ciência de dados. Sem ela, não teríamos redes neurais, processamento de imagem ou até mesmo este website.
 
-A ideia central é simples e poderosa: quando organizamos números em **vetores** e **matrizes**, ganhamos uma linguagem capaz de descrever transformações geométricas, sistemas de equações e modelos estatísticos de forma compacta — e, principalmente, eficiente para um computador calcular.
+A ideia central é simples e poderosa: quando organizamos números em **vetores** e **matrizes**, ganhamos uma linguagem capaz de descrever transformações geométricas, sistemas de equações e modelos estatísticos de forma compacta, e, principalmente, eficiente para um computador calcular.
 
 Neste artigo vamos partir do conceito mais básico, o vetor, e construir progressivamente até entender por que toda rede neural moderna é, no fundo, uma sequência de multiplicações de matrizes.
 
@@ -27,7 +27,7 @@ $$
 
 Cada número é uma **componente**, e a quantidade de componentes define a *dimensão* do vetor. O vetor acima vive em $\mathbb{R}^3$ (o espaço tridimensional).
 
-Em Machine Learning, um vetor costuma representar um único exemplo de dado. Imagine descrever uma casa por três atributos — área, número de quartos e idade:
+Em Machine Learning, um vetor costuma representar um único exemplo de dado. Imagine descrever uma casa por três atributos: área, número de quartos e idade:
 
 $$
 \mathbf{casa} = \begin{bmatrix}
@@ -84,7 +84,7 @@ $$
 \mathbf{u} \cdot \mathbf{v} = \sum_{i=1}^{n} u_i v_i = u_1 v_1 + u_2 v_2 + \dots + u_n v_n
 $$
 
-Ele responde a uma pergunta geométrica fundamental — *o quão alinhados dois vetores estão* — porque se relaciona com o ângulo $\theta$ entre eles:
+Ele responde a uma pergunta geométrica fundamental: *o quão alinhados dois vetores estão*, porque se relaciona com o ângulo $\theta$ entre eles:
 
 $$
 \mathbf{u} \cdot \mathbf{v} = \|\mathbf{u}\|\, \|\mathbf{v}\| \cos\theta
@@ -101,7 +101,7 @@ print("Produto escalar:", np.dot(u, v))   # 1*3 + 0*1 + 2*1 = 5
 
 ## Matrizes: Vários Vetores de Uma Vez
 
-Uma **matriz** é uma grade retangular de números — ou, de forma mais útil, uma coleção de vetores empilhados. Um conjunto de dados (*dataset*) inteiro é uma matriz: cada linha é um exemplo, cada coluna é uma feature.
+Uma **matriz** é uma grade retangular de números ou, de forma mais útil, uma coleção de vetores empilhados. Um conjunto de dados (*dataset*) inteiro é uma matriz: cada linha é um exemplo, cada coluna é uma feature.
 
 $$
 X = \begin{bmatrix}
@@ -152,7 +152,7 @@ $$
 \hat{\mathbf{y}} = X \mathbf{w} + b
 $$
 
-Não há laço de repetição percorrendo casa por casa — uma única operação matricial calcula tudo. É por isso que GPUs, otimizadas para multiplicar matrizes gigantescas, revolucionaram a área.
+Não há laço de repetição percorrendo casa por casa. Uma única operação matricial calcula tudo. É por isso que GPUs, otimizadas para multiplicar matrizes gigantescas, revolucionaram a área.
 
 ```python
 # Dataset: 3 casas, 2 features (área, nº de quartos)
@@ -181,10 +181,10 @@ Empilhe dezenas dessas camadas e você terá os modelos que reconhecem imagens, 
 
 ## Conclusão
 
-Começamos com uma simples lista de números e chegamos ao coração das redes neurais. A beleza da Álgebra Linear está justamente nisso: poucos conceitos — vetor, produto escalar e multiplicação de matrizes — combinam-se para descrever desde a geometria do espaço até os modelos de IA mais avançados.
+Começamos com uma simples lista de números e chegamos ao coração das redes neurais. A beleza da Álgebra Linear está justamente nisso: poucos conceitos como vetor, produto escalar e multiplicação de matrizes, combinam-se para descrever desde a geometria do espaço até os modelos de IA mais avançados.
 
 Da próxima vez que treinar um modelo, lembre-se: você não está apenas ajustando parâmetros, está dançando com vetores e matrizes em espaços de dimensão altíssima.
 
-> **Próximo passo:** explore *autovalores* e *autovetores* — a base de técnicas como o PCA (Análise de Componentes Principais), usadas para reduzir a dimensionalidade dos dados sem perder o que importa.
+> **Próximo passo:** explore *autovalores* e *autovetores* a base de técnicas como o PCA (Análise de Componentes Principais), usadas para reduzir a dimensionalidade dos dados sem perder o que importa.
 
 Gostou? Continue acompanhando o blog para mais conexões entre matemática e tecnologia.

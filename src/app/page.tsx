@@ -19,15 +19,15 @@ export default async function Home() {
       {/* Hero Text */}
       <div className="text-center max-w-3xl mb-8">
 
-        <span className="text-blue-400 font-mono text-sm mb-4 tracking-wider uppercase">
+        <span className="text-primary font-mono text-sm mb-4 tracking-wider uppercase">
           Matemática • Dados • Inteligência Artificial
         </span>
 
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 text-white">
-          Olá! Me chamo <span className="text-blue-400">Ronald</span>, e este é meu portfólio.
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 text-foreground">
+          Olá! Me chamo <span className="text-primary">Ronald</span>, e este é meu portfólio.
         </h1>
 
-        <p className="text-lg text-slate-300 mb-10 max-w-2xl leading-relaxed mx-auto">
+        <p className="text-lg text-muted-foreground mb-10 max-w-2xl leading-relaxed mx-auto">
           Aqui compartilho minha jornada transitando
           entre a lógica matemática e a criatividade dos algoritmos de Machine
           Learning.

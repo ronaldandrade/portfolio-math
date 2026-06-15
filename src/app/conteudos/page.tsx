@@ -8,13 +8,13 @@ export default function ConteudosPage() {
   return (
     <section className="max-w-5xl w-full px-6 py-12">
       <h1 className="text-3xl font-bold mb-2">Conteúdos Recentes</h1>
-      <p className="text-slate-400 mb-10">Tutoriais, visualizações matemáticas e devlogs.</p>
+      <p className="text-muted-foreground mb-10">Tutoriais, visualizações matemáticas e devlogs.</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {videos.map((video) => (
-          <div key={video.id} className="bg-slate-00 border border-slate-800 rounded-xl overflow-hidden hover:border-blue-500/50 transition-all group">
+          <div key={video.id} className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/50 transition-all group">
             {/* Área do Vídeo (Embed) */}
-            <div className="aspect-video w-full bg-black">
+            <div className="aspect-video w-full bg-muted">
               <iframe 
                 width="100%" 
                 height="100%" 
@@ -28,8 +28,8 @@ export default function ConteudosPage() {
             
             {/* Texto */}
             <div className="p-4">
-              <span className="text-xs text-blue-400 font-mono">{video.date}</span>
-              <h3 className="font-semibold text-white mt-1 group-hover:text-blue-200">{video.title}</h3>
+              <span className="text-xs text-primary font-mono">{video.date}</span>
+              <h3 className="font-semibold text-foreground mt-1 group-hover:text-primary">{video.title}</h3>
             </div>
           </div>
         ))}

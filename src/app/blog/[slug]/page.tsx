@@ -53,21 +53,21 @@ export default async function PostPage({ params }: Props) {
     <article className="max-w-3xl w-full px-6 py-12 mx-auto">
       <Link 
         href="/blog" 
-        className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-8 transition-colors text-sm"
+        className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors text-sm"
       >
         <ArrowLeft size={16} /> Voltar para o blog
       </Link>
 
       <header className="mb-10">
-        <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
+        <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
           {meta.title}
         </h1>
-        <div className="flex items-center gap-4 text-slate-500 font-mono text-sm">
+        <div className="flex items-center gap-4 text-muted-foreground font-mono text-sm">
           <time>{meta.date}</time>
           <span>•</span>
           <div className="flex gap-2">
             {meta.tags?.map(tag => (
-              <span key={tag} className="text-blue-400">#{tag}</span>
+              <span key={tag} className="text-primary">#{tag}</span>
             ))}
           </div>
         </div>
@@ -85,9 +85,9 @@ export default async function PostPage({ params }: Props) {
         />
       </div>
 
-      <div className="mt-16 pt-8 border-t border-slate-800">
-         <p className="text-slate-400 italic">
-           Gostou deste artigo? <Link href="/links" className="text-blue-400 underline">Inscreva-se na newsletter</Link>.
+      <div className="mt-16 pt-8 border-t border-border">
+         <p className="text-muted-foreground italic">
+           Gostou deste artigo? <Link href="/links" className="text-primary underline">Inscreva-se na newsletter</Link>.
          </p>
       </div>
     </article>
