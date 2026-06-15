@@ -3,6 +3,15 @@ import { MDXRemote } from "next-mdx-remote/rsc";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
+// Componentes disponíveis dentro do MDX
+import GraficoAtivacao from "@/app/components/graficos/grafico_Interativo_sigmoid";
+import SimuladorLimites from "@/app/components/graficos/grafico_simulador_limites";
+
+const mdxComponents = {
+  GraficoAtivacao,
+  SimuladorLimites,
+};
+
 // Plugins
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -73,9 +82,10 @@ export default async function PostPage({ params }: Props) {
         </div>
       </header>
 
-      <div className="prose prose-invert prose-lg prose-blue max-w-none">
-        <MDXRemote 
+      <div className="prose dark:prose-invert prose-lg max-w-none prose-headings:font-semibold prose-a:text-accent prose-a:no-underline hover:prose-a:underline prose-code:font-normal">
+        <MDXRemote
           source={content}
+          components={mdxComponents}
           options={{
             mdxOptions: {
               remarkPlugins: [remarkMath],

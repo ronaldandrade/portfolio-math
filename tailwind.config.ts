@@ -55,10 +55,11 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
-      // Restaura as fontes elegantes que definimos no começo
+      // Cascadia Mono em todo o site (estilo minimalista monoespaçado)
       fontFamily: {
-        sans: ["var(--font-inter)", "ui-sans-serif", "system-ui"],
-        serif: ["var(--font-merriweather)", "ui-serif", "Georgia"],
+        sans: ["var(--font-cascadia)", "ui-monospace", "SFMono-Regular", "monospace"],
+        mono: ["var(--font-cascadia)", "ui-monospace", "SFMono-Regular", "monospace"],
+        serif: ["var(--font-cascadia)", "ui-monospace", "monospace"],
       },
     },
   },

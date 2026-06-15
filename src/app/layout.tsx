@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Cascadia_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer"; // Importe o Footer
 import { ThemeProvider } from "./components/ThemeProvider";
 
-const inter = Inter({ subsets: ["latin"] });
+// Fonte monoespaçada que dá o tom minimalista de todo o site
+const cascadia = Cascadia_Mono({
+  subsets: ["latin"],
+  variable: "--font-cascadia",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Ronald Math",
@@ -19,8 +24,8 @@ export default function RootLayout({
 }>) {
   return (
     /* ADICIONE suppressHydrationWarning AQUI NA TAG HTML */
-    <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased flex flex-col min-h-screen`}>
+    <html lang="pt-BR" className={cascadia.variable} suppressHydrationWarning>
+      <body className="font-sans antialiased flex flex-col min-h-screen">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

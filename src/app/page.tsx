@@ -19,33 +19,32 @@ export default async function Home() {
       {/* Hero Text */}
       <div className="text-center max-w-3xl mb-8">
 
-        <span className="text-primary font-mono text-sm mb-4 tracking-wider uppercase">
+        <span className="block text-primary font-mono text-sm mb-6 tracking-[0.2em] uppercase">
           Matemática • Dados • Inteligência Artificial
         </span>
 
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 text-foreground">
-          Olá! Me chamo <span className="text-primary">Ronald</span>, e este é meu portfólio.
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 text-foreground leading-[1.05]">
+          Um arquivo vivo de estudos em <span className="text-primary">matemática</span> e <span className="text-primary">IA</span>.
         </h1>
 
-        <p className="text-lg text-muted-foreground mb-10 max-w-2xl leading-relaxed mx-auto">
-          Aqui compartilho minha jornada transitando
-          entre a lógica matemática e a criatividade dos algoritmos de Machine
-          Learning.
+        <p className="text-lg text-muted-foreground mb-10 max-w-xl leading-relaxed mx-auto">
+          Conteúdo informativo e didático, registrado conforme aprendo. Cada
+          artigo, vídeo e material é um marco da jornada — da lógica matemática
+          aos algoritmos de Machine Learning.
         </p>
         <div className="flex justify-center gap-4">
-          <Link 
-            href="/conteudos" 
+          <Link
+            href="/blog"
+            className="bg-primary text-primary-foreground px-6 py-3 rounded-full font-semibold hover:opacity-90 transition-all"
+          >
+            Explorar artigos
+          </Link>
+          <Link
+            href="/conteudos"
             className="border border-border text-foreground px-6 py-3 rounded-full font-semibold hover:border-primary hover:text-primary transition-all"
           >
-            Meus Vídeos
+            Ver vídeos
           </Link>
-                    <Link 
-            href="/blog" 
-            className="border border-border text-foreground px-6 py-3 rounded-full font-semibold hover:border-primary hover:text-primary transition-all"
-          >
-            Artigos
-          </Link>
-
         </div>
       </div>
 
