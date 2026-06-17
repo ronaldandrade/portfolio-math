@@ -1,0 +1,213 @@
+---
+title: 'PCA: Reduzindo Dimensões sem Perder o Essencial'
+date: '2026-06-17'
+description: 'Como a Análise de Componentes Principais usa autovalores e autovetores da matriz de covariância para comprimir dados de alta dimensão, preservando o máximo de variância possível.'
+tags: ['Matemática', 'Machine Learning', 'Álgebra Linear', 'Python']
+author: 'Ronald Andrade'
+readingTime: '13 min'
+difficulty: 'intermediate'
+---
+
+# Introdução
+
+Dados reais raramente vivem em duas ou três dimensões. Uma única imagem de 28 por 28 pixels já são 784 dimensões; um cliente de e-commerce pode ser descrito por centenas de atributos. Conforme o número de *features* cresce, surge a chamada **maldição da dimensionalidade**: o espaço fica tão vazio que distâncias perdem significado, modelos sofrem com *overfitting* e a visualização se torna impossível.
+
+A **Análise de Componentes Principais** (*Principal Component Analysis*, PCA) é a resposta clássica para esse problema. Ela encontra um novo sistema de coordenadas, alinhado às direções de maior variância dos dados, e descarta as direções pouco informativas. O resultado é uma versão comprimida do conjunto que mantém quase toda a estrutura original.
+
+Neste artigo vamos entender a intuição geométrica do PCA, sua fundação em álgebra linear (covariância, autovalores e autovetores), implementá-lo do zero em NumPy e, por fim, aplicá-lo com `scikit-learn` em um caso real.
+
+> Em uma frase: o PCA projeta os dados sobre as direções que maximizam a variância, comprimindo muitas *features* correlacionadas em poucas componentes não correlacionadas.
+
+## A intuição geométrica
+
+Imagine uma nuvem de pontos em formato de charuto, espalhada num plano. Embora os dados estejam em duas dimensões, quase toda a sua variação acontece ao longo de **uma única direção**: o eixo mais comprido do charuto. A direção perpendicular contribui muito pouco.
+
+O PCA formaliza essa observação. Ele busca uma nova base ortogonal onde:
+
+- A **primeira componente principal** aponta na direção de **máxima variância** dos dados.
+- A **segunda componente** aponta na direção de maior variância restante, sob a restrição de ser **ortogonal** à primeira.
+- E assim por diante, até esgotar as dimensões originais.
+
+Projetar os pontos sobre as primeiras componentes preserva o máximo de informação (variância) possível para aquele número de dimensões. Existe uma dualidade elegante aqui: maximizar a variância retida é **equivalente** a minimizar o erro quadrático de reconstrução dos pontos projetados.
+
+## Fundação teórica: variância e covariância
+
+Tudo no PCA gira em torno de como as *features* variam juntas. Para um conjunto de $n$ amostras e duas *features* $X$ e $Y$, a **covariância** mede a tendência de variarem na mesma direção:
+
+$$
+\text{cov}(X, Y) = \frac{1}{n-1}\sum_{i=1}^{n}(x_i - \bar{x})(y_i - \bar{y})
+$$
+
+Quando temos $d$ *features*, organizamos todas as covariâncias numa **matriz de covariância** $\mathbf{\Sigma}$ de tamanho $d \times d$. Seja $\mathbf{X} \in \mathbb{R}^{n \times d}$ a matriz de dados já **centralizada** (cada coluna com média zero):
+
+$$
+\mathbf{\Sigma} = \frac{1}{n-1}\mathbf{X}^{\top}\mathbf{X}
+$$
+
+Na diagonal de $\mathbf{\Sigma}$ ficam as variâncias de cada *feature*; fora dela, as covariâncias entre pares. Essa matriz é simétrica e positiva semidefinida, propriedade que garante autovalores reais e não negativos, exatamente o que o PCA precisa.
+
+> **Por que centralizar é obrigatório:** o PCA mede variância em torno da média. Se os dados não forem centralizados, a primeira componente tende a apontar para a média geral em vez da direção de maior dispersão, distorcendo todo o resultado.
+
+## O coração do PCA: autovalores e autovetores
+
+A pergunta central é: qual direção $\mathbf{v}$ maximiza a variância dos dados projetados? A variância da projeção sobre um vetor unitário $\mathbf{v}$ é $\mathbf{v}^{\top}\mathbf{\Sigma}\mathbf{v}$. Maximizar essa expressão sob a restrição $\|\mathbf{v}\| = 1$ leva, via multiplicadores de Lagrange, à equação fundamental:
+
+$$
+\mathbf{\Sigma}\mathbf{v} = \lambda \mathbf{v}
+$$
+
+Essa é a definição de **autovetor**: uma direção $\mathbf{v}$ que a matriz $\mathbf{\Sigma}$ apenas estica ou encolhe por um fator escalar $\lambda$ (o **autovalor**), sem girá-la. A consequência é direta e poderosa:
+
+- Cada **autovetor** de $\mathbf{\Sigma}$ é uma **componente principal** (uma direção do novo sistema de coordenadas).
+- O **autovalor** associado é exatamente a **variância** dos dados ao longo daquela direção.
+
+Portanto, ordenar os autovetores pelo autovalor decrescente coloca as componentes da mais informativa para a menos informativa. Ficamos com os $k$ primeiros e descartamos o resto.
+
+### Variância explicada
+
+A fração da variância total capturada pela componente $j$ é:
+
+$$
+\text{variância explicada}_j = \frac{\lambda_j}{\sum_{i=1}^{d}\lambda_i}
+$$
+
+Somando as $k$ maiores frações, obtemos a **variância explicada acumulada**, o critério padrão para decidir quantas componentes manter (por exemplo, as suficientes para reter 95%).
+
+## O algoritmo, passo a passo
+
+**Passo 1:** Padronize as *features* (média zero e, em geral, desvio padrão um), pois o PCA é sensível à escala.
+
+**Passo 2:** Calcule a matriz de covariância $\mathbf{\Sigma} = \frac{1}{n-1}\mathbf{X}^{\top}\mathbf{X}$.
+
+**Passo 3:** Encontre os autovalores $\lambda_i$ e autovetores $\mathbf{v}_i$ de $\mathbf{\Sigma}$.
+
+**Passo 4:** Ordene os autovetores por autovalor decrescente e selecione os $k$ primeiros, formando a matriz de projeção $\mathbf{W} \in \mathbb{R}^{d \times k}$.
+
+**Passo 5:** Projete os dados no novo subespaço: $\mathbf{Z} = \mathbf{X}\mathbf{W}$, com $\mathbf{Z} \in \mathbb{R}^{n \times k}$.
+
+## Implementando o PCA do zero em NumPy
+
+Nada esclarece mais que escrever o algoritmo à mão. O código abaixo segue exatamente os cinco passos:
+
+```python
+import numpy as np
+
+def pca_do_zero(X, n_componentes):
+    """
+    Aplica PCA usando decomposição em autovalores da matriz de covariância.
+
+    Args:
+        X: array (n_amostras, n_features) com os dados.
+        n_componentes: número de componentes principais a manter.
+
+    Returns:
+        Z: dados projetados (n_amostras, n_componentes).
+        variancia_explicada: fração da variância retida por componente.
+    """
+    # Passo 1: centralizar os dados (média zero em cada coluna)
+    X_centralizado = X - np.mean(X, axis=0)
+
+    # Passo 2: matriz de covariância (features nas linhas/colunas)
+    cov = np.cov(X_centralizado, rowvar=False)
+
+    # Passo 3: autovalores e autovetores (eigh para matriz simétrica)
+    autovalores, autovetores = np.linalg.eigh(cov)
+
+    # Passo 4: ordenar do maior para o menor autovalor
+    ordem = np.argsort(autovalores)[::-1]
+    autovalores = autovalores[ordem]
+    autovetores = autovetores[:, ordem]
+
+    W = autovetores[:, :n_componentes]          # matriz de projeção (d x k)
+
+    # Passo 5: projetar os dados no novo subespaço
+    Z = X_centralizado @ W
+
+    variancia_explicada = autovalores / np.sum(autovalores)
+    return Z, variancia_explicada[:n_componentes]
+
+
+# Teste com dados sintéticos correlacionados em 2D
+rng = np.random.default_rng(42)
+base = rng.normal(0, 1, size=(200, 1))
+X = np.hstack([base * 3 + rng.normal(0, 0.3, (200, 1)),
+               base * 1 + rng.normal(0, 0.3, (200, 1))])
+
+Z, var_exp = pca_do_zero(X, n_componentes=1)
+print(f"Forma original: {X.shape}, forma reduzida: {Z.shape}")  # (200, 2) -> (200, 1)
+print(f"Variância explicada pela 1ª componente: {var_exp[0]:.3f}")  # ~0.97
+```
+
+Como os dados foram construídos quase sobre uma reta, uma única componente captura cerca de 97% da variância: reduzimos de duas para uma dimensão perdendo pouquíssima informação.
+
+> **Por que `eigh` e não `eig`:** a matriz de covariância é simétrica. A rotina `np.linalg.eigh` explora essa propriedade, sendo mais rápida e numericamente estável, e retorna autovalores reais já ordenados de forma previsível.
+
+## PCA na prática com scikit-learn
+
+Para uso real, a implementação do `scikit-learn` é mais robusta (usa SVD internamente, evitando formar a matriz de covariância) e integra-se ao restante do pipeline. Vamos aplicá-la ao dataset **Iris**, com 4 *features*, reduzindo para 2 dimensões para visualização.
+
+```python
+import numpy as np
+from sklearn.datasets import load_iris
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+dados = load_iris()
+X, y = dados.data, dados.target   # 150 amostras, 4 features
+
+# Padronização: passo essencial antes do PCA
+X_escalado = StandardScaler().fit_transform(X)
+
+pca = PCA(n_components=2)
+Z = pca.fit_transform(X_escalado)
+
+print("Forma reduzida:", Z.shape)                              # (150, 2)
+print("Variância explicada:", pca.explained_variance_ratio_)  # ~[0.73, 0.23]
+print("Variância acumulada:", pca.explained_variance_ratio_.sum())  # ~0.96
+```
+
+Com apenas 2 das 4 dimensões originais, retemos cerca de 96% da variância. As três espécies de flor formam grupos visualmente separáveis no novo plano, ilustrando como o PCA revela estrutura escondida.
+
+### Escolhendo o número de componentes
+
+Em vez de chutar $k$, deixe a variância explicada acumulada guiar a decisão. O `scikit-learn` permite até passar a fração desejada diretamente:
+
+```python
+from sklearn.decomposition import PCA
+
+# Mantém componentes suficientes para reter 95% da variância
+pca_95 = PCA(n_components=0.95)
+Z_95 = pca_95.fit_transform(X_escalado)
+print(f"Componentes necessárias para 95%: {pca_95.n_components_}")
+```
+
+A **curva do cotovelo** (variância acumulada vs. número de componentes) é a ferramenta visual clássica: escolhemos o ponto onde adicionar mais componentes deixa de compensar.
+
+## Onde o PCA é útil
+
+- **Visualização:** projetar dados de alta dimensão em 2D ou 3D para inspeção humana.
+- **Compressão e desempenho:** menos *features* significam treino mais rápido e menor consumo de memória.
+- **Redução de ruído:** descartar componentes de baixa variância muitas vezes remove ruído, mantendo o sinal.
+- **Combate ao overfitting:** menos dimensões reduzem a complexidade do modelo e o risco de decorar o treino.
+- **Descorrelação:** as componentes resultantes são, por construção, não correlacionadas entre si.
+
+## Limitações e alternativas
+
+O PCA é poderoso, mas tem premissas que nem sempre se sustentam:
+
+- **É linear.** Ele só captura estruturas lineares. Dados dispostos em uma espiral ou em um "S" não são bem representados por projeções lineares.
+- **Depende da escala.** Sem padronização, *features* de magnitude grande dominam as componentes, daí a importância do `StandardScaler`.
+- **Sacrifica interpretabilidade.** Cada componente é uma combinação linear de todas as *features* originais, o que dificulta atribuir significado direto a elas.
+- **É sensível a outliers.** Por se basear em variância, valores extremos podem distorcer as direções principais.
+
+Quando a estrutura é não linear, alternativas costumam funcionar melhor: o **Kernel PCA** aplica o truque do kernel para capturar curvaturas, enquanto **t-SNE** e **UMAP** são preferidos para visualização de variedades complexas (embora sirvam apenas para exploração, não para projeção de dados novos de forma estável).
+
+## Conclusão
+
+O PCA mostra como uma ideia de álgebra linear, a decomposição de uma matriz simétrica em autovalores e autovetores, resolve um problema central de Machine Learning: representar muitos atributos correlacionados em poucas dimensões informativas. A receita é curta: centralize, calcule a covariância, extraia os autovetores e projete sobre os de maior autovalor.
+
+O equilíbrio prático está em escolher $k$: poucas componentes perdem sinal; muitas trazem de volta ruído e custo. A variância explicada acumulada é o termômetro que guia essa decisão.
+
+> **Próximos passos:** investigue a decomposição em valores singulares (SVD), que generaliza o PCA e é o que roda por baixo do `scikit-learn`, e experimente Kernel PCA em dados não lineares para sentir o limite das projeções lineares.
+
+**Referências:** Hastie, Tibshirani e Friedman, *The Elements of Statistical Learning* (2009, Cap. 14); Bishop, *Pattern Recognition and Machine Learning* (2006, Cap. 12); documentação do [scikit-learn sobre decomposição](https://scikit-learn.org/stable/modules/decomposition.html).
