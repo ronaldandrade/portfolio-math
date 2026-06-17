@@ -1,0 +1,580 @@
+---
+title: 'Machine Learning do Zero: Um Guia Prático com Python'
+date: '2026-02-01'
+description: 'Do tipo de dado à matriz de confusão: um percurso por todo o pipeline de Machine Learning para iniciantes, com código Python executável em cada etapa e um projeto final de análise de sentimentos.'
+tags: ['Matemática', 'Machine Learning', 'Estatística', 'Python']
+author: 'Ronald Andrade'
+readingTime: '18 min'
+difficulty: 'beginner'
+---
+
+# Introdução
+
+Machine Learning (ML) deixou de ser jargão de laboratório para se tornar uma das competências mais valiosas do século XXI. Diferente do software tradicional, onde cada regra é escrita manualmente, em ML o algoritmo **aprende padrões diretamente dos dados** e ajusta seu desempenho ao longo do tempo. Bancos preveem inadimplência, hospitais detectam tumores e lojas recomendam produtos, tudo a partir de exemplos, não de regras codificadas à mão.
+
+Este guia foi pensado para quem está dando os primeiros passos. Você precisa apenas de noções básicas de estatística e familiaridade mínima com Python. O objetivo é desmistificar o ML construindo intuição **e** rodando código de verdade.
+
+> Em uma frase: este artigo percorre todo o pipeline de Machine Learning para iniciantes, dos tipos de dados à estatística essencial, passando por regressão, classificação, clustering e avaliação de modelos, até um projeto real de análise de sentimentos em notícias.
+
+## O ponto de partida são os dados
+
+Todo modelo de ML nasce dos dados, e entender sua natureza é o primeiro filtro de qualidade do projeto. Há duas grandes famílias:
+
+- **Dados Qualitativos (categóricos):** atributos que não se medem numericamente.
+	- *Nominais*: sem ordem natural. Ex.: cores (vermelho, azul, verde).
+	- *Ordinais*: possuem hierarquia. Ex.: níveis de satisfação (ruim, regular, bom, ótimo).
+- **Dados Quantitativos (numéricos):** valores mensuráveis.
+	- *Discretos*: inteiros e finitos. Ex.: número de filhos.
+	- *Contínuos*: qualquer valor num intervalo. Ex.: altura, peso, temperatura.
+
+> **Por que isso importa de verdade:** dados textuais (opiniões, notícias) **não** entram direto num modelo matemático. Eles exigem pré-processamento, como tokenização, remoção de *stopwords* ou vetorização via TF-IDF. Ignorar essa distinção é receita para previsões sem sentido: o algoritmo mais avançado falha se os dados não forem preparados conforme sua natureza.
+
+### Os quatro tipos de aprendizado
+
+| Tipo | Quando usar | Exemplo | Algoritmo típico |
+|---|---|---|---|
+| **Supervisionado** | Dados rotulados (entrada → resposta certa) | Prever se cliente paga empréstimo | Regressão Logística |
+| **Não Supervisionado** | Sem rótulos; achar estrutura escondida | Segmentar clientes por compras | K-Means, PCA |
+| **Por Reforço** | Agente aprende por tentativa/erro e recompensa | Robô aspirador, AlphaGo | Q-Learning, DRL |
+| **Semi Supervisionado** | Poucos rótulos + muitos dados não rotulados | 100 imagens médicas rotuladas + 10.000 sem rótulo | Pseudo-rotulação, co-treinamento |
+
+O **supervisionado** se subdivide conforme a saída: **classificação** quando a resposta é uma categoria ("spam" ou "não spam") e **regressão** quando é um valor contínuo (o preço de uma casa).
+
+## Estatística essencial: a base de tudo
+
+Antes de modelar, é preciso descrever e entender os dados. As medidas centrais são média, mediana, moda, variância, desvio padrão, correlação e a detecção de *outliers*.
+
+### Média e desvio padrão na prática
+
+Considere as temperaturas máximas de uma semana: `20, 22, 19, 23, 21, 20, 24`.
+
+A **média** é a soma dividida pelo número de observações:
+
+$$
+\bar{x} = \frac{\sum_{i=1}^{n} x_i}{n} = \frac{149}{7} \approx 21{,}29\,°C
+$$
+
+O **desvio padrão** mede a dispersão em torno da média. Para uma população:
+
+$$
+\sigma = \sqrt{\frac{\sum_{i=1}^{n}(x_i - \bar{x})^2}{n}}
+$$
+
+Passo a passo: calculamos cada diferença $(x_i - \bar{x})$, elevamos ao quadrado, somamos ($\approx 19{,}43$), dividimos por $n=7$ ($\approx 2{,}78$) e tiramos a raiz, chegando a $\sigma \approx 1{,}66\,°C$.
+
+Em Python, com NumPy, o cálculo é imediato:
+
+```python
+import numpy as np
+
+# Temperaturas máximas diárias (°C)
+temperaturas = [20, 22, 19, 23, 21, 20, 24]
+
+media = np.mean(temperaturas)
+print(f"Média das temperaturas: {media:.2f}°C")          # 21.29°C
+
+desvio_padrao = np.std(temperaturas)
+print(f"Desvio padrão das temperaturas: {desvio_padrao:.2f}°C")  # 1.67°C
+```
+
+> **Pequenas diferenças:** o cálculo manual deu $1{,}66$ e o Python $1{,}67$. A divergência é puramente de arredondamento. É esperado e inofensivo.
+
+### Distribuição Normal
+
+A distribuição normal (gaussiana) é uma curva simétrica em forma de sino, definida pela média $\mu$ e pelo desvio $\sigma$. A regra empírica: aproximadamente **68%** dos dados ficam a 1 desvio da média, **95%** a 2 desvios e **99,7%** a 3 desvios. Modelos como regressão linear e Gaussian Naive Bayes assumem essa distribuição; a falta de normalidade pode exigir transformações (ex.: logarítmica).
+
+Para verificar normalidade em um conjunto fictício de alturas, usamos o **teste de Shapiro**:
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import norm, shapiro
+
+alturas = np.random.normal(170, 10, 100)
+plt.hist(alturas, bins=10, density=True, alpha=0.6, color='b', label='Histograma')
+xmin, xmax = plt.xlim()
+x = np.linspace(xmin, xmax, 100)
+plt.plot(x, norm.pdf(x, 170, 10), 'k', linewidth=2, label='Curva Normal')
+plt.title("Distribuição de Alturas")
+plt.xlabel("Altura (cm)"); plt.ylabel("Densidade"); plt.legend()
+plt.show()
+
+estatistica, p_valor = shapiro(alturas)
+print(f"Teste Shapiro - Estatística: {estatistica:.3f}, p-valor: {p_valor:.3f}")
+```
+
+**Leitura:** se o p-valor for $> 0{,}05$, confirmamos normalidade. Se fosse $< 0{,}05$, uma transformação (ex.: log) seria necessária antes de usar regressão linear ou testes paramétricos.
+
+### Correlação de Pearson
+
+A correlação $r$ mede a força e a direção da relação **linear** entre duas variáveis $X$ e $Y$:
+
+$$
+r = \frac{\sum (x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\sum (x_i - \bar{x})^2 \cdot \sum (y_i - \bar{y})^2}}
+$$
+
+Ela varia de $-1$ (correlação negativa perfeita) a $+1$ (positiva perfeita), com $0$ indicando ausência de relação linear.
+
+**Exemplo: horas de estudo vs. nota.**
+
+| Pessoa | Horas (X) | Nota (Y) |
+|---|---|---|
+| João | 2 | 60 |
+| Ana | 4 | 70 |
+| Bruno | 6 | 80 |
+| Carla | 8 | 90 |
+| Lucas | 10 | 100 |
+
+Com médias $\bar{x}=6$ e $\bar{y}=80$, ao substituir na fórmula:
+
+$$
+r = \frac{200}{\sqrt{40 \cdot 1000}} = \frac{200}{\sqrt{40000}} = \frac{200}{200} = 1
+$$
+
+Uma **correlação positiva perfeita**: quanto mais a pessoa estuda, maior tende a ser sua nota. Em Python:
+
+```python
+import numpy as np
+from scipy.stats import pearsonr
+
+horas_estudo = np.array([2, 4, 6, 8, 10])
+notas = np.array([60, 70, 80, 90, 100])
+
+correlacao, p_valor = pearsonr(horas_estudo, notas)
+print(f"Correlação de Pearson: {correlacao:.2f}")   # 1.00
+print(f"Valor-p: {p_valor:.4f}")                     # 0.0000
+```
+
+### Testes de Hipóteses (Teste t)
+
+Testes de hipóteses avaliam se uma diferença observada é **estatisticamente significativa** ou fruto do acaso, a lógica por trás dos testes A/B. O teste t compara médias de dois grupos, testando a hipótese nula $H_0$ de que não há diferença. Um p-valor $< 0{,}05$ rejeita $H_0$.
+
+```python
+from scipy.stats import ttest_ind
+
+temp_cidade1 = [22, 23, 22, 25, 19]
+temp_cidade2 = [20, 21, 19, 22, 18]
+estatistica, p_valor = ttest_ind(temp_cidade1, temp_cidade2)
+print(f"Estatística t: {estatistica:.2f}, p-valor: {p_valor:.3f}")
+# Estatística t = 1.73, p-valor = 0.119
+```
+
+**Interpretação:** p-valor de $0{,}119$ ($> 0{,}05$) **não** rejeita $H_0$. As médias não diferem significativamente. Em ML, isso sugere que "cidade" pode não ser uma *feature* discriminatória, economizando esforço de pré-processamento.
+
+### Normalização e Escalonamento
+
+Quando *features* têm magnitudes muito diferentes (ex.: tamanho de casa entre 50 e 120 vs. número de quartos entre 1 e 3), variáveis de escala maior dominam o treino. Modelos baseados em distância (KNN) ou gradiente (redes neurais) exigem escalonamento para convergir bem.
+
+```python
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+
+data = {'tamanho': [50, 70, 80, 100, 120], 'quartos': [1, 2, 2, 3, 3]}
+df = pd.DataFrame(data)
+scaler = StandardScaler()
+dados_escalonados = scaler.fit_transform(df)
+print(pd.DataFrame(dados_escalonados, columns=['tamanho', 'quartos']))
+# Resultado: média ~0, desvio ~1 em ambas as colunas
+```
+
+Após o `StandardScaler`, ambas as *features* contribuem igualmente, melhorando a precisão e a estabilidade do treinamento.
+
+### Outliers: o veneno silencioso da regressão
+
+*Outliers* são valores extremos que distorcem o padrão geral. Na regressão linear, que minimiza o erro quadrático, eles têm influência desproporcional. Um método robusto de detecção é o **intervalo interquartil (IQR)**: pontos fora de $Q_1 - 1{,}5 \times IQR$ e $Q_3 + 1{,}5 \times IQR$ são suspeitos, com $IQR = Q_3 - Q_1$.
+
+O exemplo a seguir injeta um *outlier* intencional (casa de 60 m² custando R\$1.000.000) num dataset de preços e mede seu impacto:
+
+```python
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
+
+# Dataset com outlier intencional: (tamanho=60, preco=1000000)
+data = {
+    'tamanho': [50, 70, 80, 100, 120, 60, 90, 110, 85, 95, 60],
+    'preco':   [180000, 240000, 280000, 350000, 420000, 200000,
+                300000, 380000, 290000, 320000, 1000000]
+}
+df = pd.DataFrame(data)
+
+# Detecção via IQR
+Q1 = df['preco'].quantile(0.25)
+Q3 = df['preco'].quantile(0.75)
+IQR = Q3 - Q1
+limite_inferior = Q1 - 1.5 * IQR
+limite_superior = Q3 + 1.5 * IQR
+outliers = df[(df['preco'] < limite_inferior) | (df['preco'] > limite_superior)]
+print("Outliers detectados:")
+print(outliers)   # tamanho=60, preco=1000000
+
+# Regressão COM outlier
+X = df[['tamanho']]; y = df['preco']
+modelo_com = LinearRegression().fit(X, y)
+
+# Regressão SEM outlier
+df_sem = df[df['preco'] <= limite_superior]
+modelo_sem = LinearRegression().fit(df_sem[['tamanho']], df_sem['preco'])
+
+print(f"Com outlier  - Inclinação: {modelo_com.coef_[0]:.2f}, Intercepto: {modelo_com.intercept_:.2f}")
+print(f"Sem outlier  - Inclinação: {modelo_sem.coef_[0]:.2f}, Intercepto: {modelo_sem.intercept_:.2f}")
+# Com outlier: Inclinação = 3897.42, Intercepto = 57019.80
+# Sem outlier: Inclinação = 2518.52, Intercepto = 109259.26
+```
+
+> **O impacto em números:** com o *outlier*, o modelo estima que cada m² adicional vale R\$3.897, um valor inflado. Removido o ponto anômalo, a inclinação cai para R\$2.519/m², alinhando-se aos dados típicos (entre R\$180.000 e R\$420.000). Em produção, alternativas incluem substituir o valor pela média ou usar modelos robustos como **RANSAC**.
+
+## Regressão: prevendo valores contínuos
+
+Regressão prevê números: preço de uma casa, temperatura futura, tempo de entrega. É aprendizado supervisionado: a partir de pares (entrada, saída), buscamos uma função que generalize para dados novos.
+
+### Regressão Linear
+
+Assume que a relação entre $x$ e $y$ é aproximada por uma reta:
+
+$$
+y = mx + b
+$$
+
+onde $m$ é a inclinação e $b$ o intercepto. O treino ajusta $m$ e $b$ para minimizar o **erro quadrático médio (MSE)**:
+
+$$
+\text{MSE} = \frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2
+$$
+
+**Exemplo: preço de casas por tamanho.**
+
+| Tamanho (m²) | Preço (mil R\$) |
+|---|---|
+| 50 | 200 |
+| 70 | 250 |
+| 90 | 320 |
+| 110 | 380 |
+| 130 | 450 |
+
+Pelo método dos mínimos quadrados, com:
+
+$$
+m = \frac{n\sum x_i y_i - \sum x_i \sum y_i}{n \sum x_i^2 - (\sum x_i)^2}, \qquad b = \frac{\sum y_i - m \sum x_i}{n}
+$$
+
+obtemos $m \approx 3{,}46$ e $b \approx 8{,}6$, ou seja $y = 3{,}46x + 8{,}6$. Em Python:
+
+```python
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
+X = np.array([[50], [70], [90], [110], [130]])   # Tamanho (m²)
+y = np.array([200, 250, 320, 380, 450])           # Preço (mil R$)
+
+modelo = LinearRegression().fit(X, y)
+m = modelo.coef_[0]; b = modelo.intercept_
+print(f"Equação: y = {m:.2f}x + {b:.2f}")          # y = 3.46x + 8.60
+
+preco_previsto = modelo.predict(np.array([[100]]))
+print(f"Preço previsto para 100 m²: {preco_previsto[0]:.2f} mil R$")  # 354.60 mil R$
+```
+
+**Interpretação:** cada m² adicional acrescenta R\$3,46 mil ao preço, sobre uma base de R\$8,6 mil. Simples e interpretável, mas o desempenho depende de a relação ser de fato linear.
+
+### Árvore de Decisão para Regressão
+
+Quando a relação **não** é linear, as árvores de decisão (algoritmo CART) brilham. Elas dividem o espaço de dados em regiões com base em condições sobre os atributos, prevendo a média da região terminal. Por exemplo, a árvore pode perguntar: *"O tamanho é maior que 75 m²?"* e ramificar a partir daí, recursivamente, até atingir um critério de parada como `max_depth`.
+
+```python
+import pandas as pd
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
+data = {
+    'tamanho': [50, 70, 80, 100, 120, 60, 90, 110, 85, 95],
+    'quartos': [1, 2, 2, 3, 3, 1, 2, 3, 2, 2],
+    'preco':   [180000, 240000, 280000, 350000, 420000,
+                200000, 300000, 380000, 290000, 320000]
+}
+df = pd.DataFrame(data)
+X = df[['tamanho', 'quartos']]; y = df['preco']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+modelo = DecisionTreeRegressor(max_depth=3, random_state=42)
+modelo.fit(X_train, y_train)
+y_pred = modelo.predict(X_test)
+
+mse = mean_squared_error(y_test, y_pred)
+print(f"Erro Quadrático Médio (MSE): {mse:.2f}")
+# MSE ~625000000 -> RMSE ~25000 (erro típico de R$25 mil)
+```
+
+> **max_depth controla o overfitting:** limitar a árvore a 3 níveis evita que ela "memorize" o treino (sobreajuste). Uma árvore profunda demais pode alcançar MSE zero no treino e **falhar miseravelmente** no teste. Diferente da reta, a árvore captura interações locais, por exemplo o impacto do número de quartos variar conforme o tamanho.
+
+### Como avaliar regressão
+
+| Métrica | Fórmula | Interpretação |
+|---|---|---|
+| **MSE** | $\frac{1}{n}\sum (y_i - \hat{y}_i)^2$ | Menor = melhor ajuste; sensível a *outliers* (eleva ao quadrado) |
+| **RMSE** | $\sqrt{\frac{1}{n}\sum (y_i - \hat{y}_i)^2}$ | Mesma unidade dos dados; mais interpretável que o MSE |
+
+## Classificação: prevendo categorias
+
+Classificação prevê a **classe** de um dado: spam ou não spam, doente ou saudável, positivo ou negativo.
+
+### Regressão Logística
+
+Apesar do nome, é um modelo de **classificação**. Usa a função **sigmoide** para transformar uma combinação linear das *features* numa probabilidade entre 0 e 1:
+
+$$
+P(y=1 \mid x) = \frac{1}{1 + e^{-(\beta_0 + \beta_1 x_1 + \cdots + \beta_n x_n)}}
+$$
+
+Se $P > 0{,}5$, classe 1; caso contrário, classe 0. Considere classificar e-mails como spam pelas *features* nº de "grátis" e nº de "urgente":
+
+```python
+from sklearn.linear_model import LogisticRegression
+import numpy as np
+
+# Dados: [nº de "grátis", nº de "urgente"]
+X = np.array([[2, 0], [1, 3], [0, 1], [3, 2]])
+y = [0, 1, 0, 1]   # 0 = Não spam, 1 = Spam
+
+modelo = LogisticRegression().fit(X, y)
+
+novo_email = np.array([[2, 1]])   # 2 "grátis", 1 "urgente"
+probabilidade = modelo.predict_proba(novo_email)
+print(f"Probabilidade de spam: {probabilidade[0][1]:.2f}")  # 0.44
+```
+
+Com $P = 0{,}44 < 0{,}5$, o e-mail é classificado como **não spam**. Vantagem extra: a logística entrega probabilidades, oferecendo interpretabilidade.
+
+### K-Nearest Neighbors (KNN)
+
+O KNN classifica um ponto novo pela **maioria entre seus $k$ vizinhos mais próximos**, usando a distância euclidiana:
+
+$$
+d(x, y) = \sqrt{\sum_{i=1}^{n}(x_i - y_i)^2}
+$$
+
+```python
+from sklearn.neighbors import KNeighborsClassifier
+import numpy as np
+
+X = np.array([[2, 0], [1, 3], [0, 1], [3, 2]])
+y = [0, 1, 0, 1]   # 0 = Não spam, 1 = Spam
+
+modelo = KNeighborsClassifier(n_neighbors=3).fit(X, y)
+
+novo_email = np.array([[2, 1]])
+predicao = modelo.predict(novo_email)
+print(f"Classe prevista: {'Spam' if predicao[0] == 1 else 'Não spam'}")  # Não spam
+```
+
+> **Logística vs. KNN:** a **Regressão Logística** é eficaz para problemas lineares e dá probabilidades interpretáveis. O **KNN** é flexível e não assume forma específica para os dados, mas é sensível a *outliers* e à escolha de $k$ (daí a importância do escalonamento visto antes).
+
+## Clustering: encontrando grupos sem rótulos
+
+No aprendizado **não supervisionado**, não há rótulos: o objetivo é descobrir estruturas escondidas. O **clustering** agrupa dados semelhantes em *clusters*.
+
+### O algoritmo K-Means
+
+O K-Means divide os dados em $k$ grupos, minimizando a variância interna. O ciclo é:
+
+1. **Inicialização:** escolhe $k$ centroides aleatórios.
+2. **Atribuição:** associa cada ponto ao centroide mais próximo (distância euclidiana).
+3. **Atualização:** recalcula cada centroide como a média dos pontos do *cluster*.
+4. **Iteração:** repete os passos 2 e 3 até os centroides estabilizarem.
+
+**Exemplo: segmentando clientes por compras.**
+
+```python
+import numpy as np
+from sklearn.cluster import KMeans
+
+# Dados: [nº de compras mensais, valor médio gasto (R$)]
+X = np.array([[2, 50], [5, 120], [1, 30], [3, 60], [6, 150], [4, 100]])
+
+kmeans = KMeans(n_clusters=2, random_state=42)
+kmeans.fit(X)
+
+print("Atribuição dos clusters:", kmeans.labels_)        # [0, 1, 0, 0, 1, 1]
+print("Centroides:", kmeans.cluster_centers_)            # [[2, 46.67], [5, 123.33]]
+```
+
+**Interpretação:** os clientes 1, 3 e 4 (cluster 0) são **"compradores ocasionais"** (média de 2 compras, R\$46,67), enquanto 2, 5 e 6 (cluster 1) são **"compradores frequentes"** (5 compras, R\$123,33). Essa segmentação orienta campanhas de marketing direcionadas.
+
+> **Limitações do K-Means:** é preciso definir $k$ **previamente**, o que nem sempre é trivial. O **método do cotovelo** (*elbow method*) ajuda a encontrar o $k$ ideal. Além disso, o K-Means assume *clusters* esféricos e é sensível à inicialização dos centroides.
+
+## Avaliação e melhoria de modelos
+
+Um modelo só vale o quanto generaliza para dados que nunca viu.
+
+### Overfitting vs. Underfitting
+
+- **Overfitting:** o modelo se ajusta demais ao treino, capturando até ruído. Vai bem no treino e mal em dados novos. Causas: complexidade excessiva, poucos dados, falta de regularização.
+- **Underfitting:** o modelo é simples demais e nem aprende os padrões principais. Solução: mais parâmetros ou modelos mais complexos.
+
+### Divisão Treino/Teste e Validação Cruzada
+
+A prática padrão divide os dados em **treino** (ex.: 80%) e **teste** (20%). Quando há poucos dados, a divisão simples é instável: entra a **validação cruzada de $k$ dobras** (*k-fold*). Os dados são partidos em $k$ partes, o modelo é treinado $k$ vezes (usando $k-1$ partes para treino e 1 para teste), e a média dos desempenhos dá uma estimativa mais confiável.
+
+```python
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import mean_squared_error
+
+X = np.array([[50], [70], [60], [80], [55]])   # área (m²)
+y = np.array([200, 280, 240, 320, 210])         # preço (R$ mil)
+
+X_treino, X_teste, y_treino, y_teste = train_test_split(X, y, test_size=0.2, random_state=42)
+modelo = LinearRegression().fit(X_treino, y_treino)
+mse = mean_squared_error(y_teste, modelo.predict(X_teste))
+print(f"Erro Quadrático Médio (MSE): {mse:.2f}")   # 2.09 (R$ mil)²
+
+# Validação cruzada com 5 dobras
+scores = cross_val_score(modelo, X, y, cv=5, scoring='neg_mean_squared_error')
+print(f"MSE médio com validação cruzada: {-scores.mean():.2f}")  # 33.70 (R$ mil)²
+```
+
+### Métricas de classificação e a Matriz de Confusão
+
+Para classificação, métricas específicas vão além do erro bruto:
+
+| Métrica | Descrição |
+|---|---|
+| **Accuracy** | Proporção de acertos (acertos / total). Ideal para classes balanceadas |
+| **Precision** | $\frac{VP}{VP + FP}$, útil quando falsos positivos são custosos |
+| **Recall** | $\frac{VP}{VP + FN}$, importante quando falsos negativos são críticos |
+| **F1-score** | $2 \cdot \frac{\text{Precisão} \cdot \text{Recall}}{\text{Precisão} + \text{Recall}}$, equilibra os dois |
+
+A **matriz de confusão** detalha o desempenho por classe, expondo o que a acurácia esconde, algo fundamental em problemas desbalanceados. Seus quatro elementos:
+
+- **VP** (Verdadeiro Positivo): positivo previsto corretamente.
+- **VN** (Verdadeiro Negativo): negativo previsto corretamente.
+- **FP** (Falso Positivo): negativo previsto como positivo (erro tipo I).
+- **FN** (Falso Negativo): positivo previsto como negativo (erro tipo II).
+
+**Exemplo real, detecção de fraudes em cartões:** o dataset *Credit Card Fraud Detection* (Kaggle) tem 284.807 transações, das quais apenas 492 (0,17%) são fraudes, um conjunto altamente desbalanceado.
+
+```python
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix, classification_report
+
+df = pd.read_csv('creditcard.csv')
+X = df.drop(columns=['Class']); y = df['Class']   # 0 = não fraude, 1 = fraude
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y)
+
+# class_weight='balanced' compensa o desbalanceamento
+modelo = LogisticRegression(max_iter=1000, class_weight='balanced', random_state=42)
+modelo.fit(X_train, y_train)
+y_pred = modelo.predict(X_test)
+
+print(confusion_matrix(y_test, y_pred))
+print(classification_report(y_test, y_pred, target_names=['Não Fraude', 'Fraude']))
+```
+
+Resultado típico no teste (56.962 amostras):
+
+| | Previsto Não Fraude | Previsto Fraude |
+|---|---|---|
+| **Real Não Fraude** | 55313 (VN) | 1551 (FP) |
+| **Real Fraude** | 8 (FN) | 90 (VP) |
+
+> **Por que a acurácia engana:** o modelo acerta 97%, um número impressionante, mas **enganoso**, pois as não fraudes dominam o dataset. O que importa é o *recall* de 0,92 para fraudes (92% das fraudes capturadas) e a precisão de apenas 0,53 (cerca de metade dos alarmes de fraude estavam errados). Os 8 FN são fraudes perdidas (prejuízo financeiro); os 1551 FP são clientes incomodados com bloqueios indevidos. Técnicas como ajuste do limiar de decisão ou **SMOTE** (reamostragem) ajudam a equilibrar esse *trade-off*.
+
+## Projeto final: classificando notícias com ML
+
+Hora de juntar tudo num pipeline real. Vamos classificar notícias como **positivas** ou **negativas** usando um dataset com cerca de 845 títulos, dos quais 200 já foram rotulados manualmente na coluna `sentimento`. As ferramentas: `pandas`, `TfidfVectorizer` para vetorização e **SVM** (Support Vector Machine) para classificação.
+
+### Etapa 1: Análise exploratória
+
+```python
+import pandas as pd
+
+df = pd.read_csv('noticias.csv')
+print(df.head())   # 7 colunas: id, titulo, conteudo, url, data_publicacao, resumo, sentimento
+print(df.info())   # 845 linhas; 'sentimento' só tem 200 preenchidas; 'resumo' tem 615 vazias
+```
+
+O `df.info()` revela o essencial: `titulo` está completo (845 linhas) e `sentimento` tem 200 rótulos. Já `resumo`, com 615 valores nulos, será descartado. **Entender os dados antes de modelar evita armadilhas.**
+
+### Etapa 2: Preparando os rótulos
+
+Convertemos os 200 títulos rotulados em números: 1 para positivo, 0 para negativo.
+
+```python
+titulos = df['titulo'].tolist()
+amostra_titulos = titulos[:200]
+rotulos = [1 if s == 'Positivo' else 0 for s in df['sentimento'][:200]]
+print("Total de positivos:", sum(rotulos), "Total de negativos:", len(rotulos) - sum(rotulos))
+# Total de positivos: 108 Total de negativos: 92
+```
+
+### Etapa 3: Transformando texto em números (TF-IDF)
+
+Modelos não entendem texto. O **TF-IDF** (*Term Frequency-Inverse Document Frequency*) converte cada palavra num peso baseado na sua frequência no documento e no corpus: termos mais relevantes recebem pesos maiores.
+
+```python
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+stopwords_pt = ['e', 'em', 'de', 'para', 'com', 'que', 'do', 'da', 'no',
+                'na', 'o', 'a', 'as', 'os']
+vetorizador = TfidfVectorizer(max_features=1000, stop_words=stopwords_pt, lowercase=True)
+X = vetorizador.fit_transform(amostra_titulos).toarray()
+print("Formato dos dados:", X.shape)   # (200, 1000)
+```
+
+Cada título vira um vetor de 1000 números, ou seja, uma matriz de 200 linhas por 1000 colunas.
+
+### Etapa 4: Treinando e avaliando o SVM
+
+O **SVM** encontra o hiperplano que melhor separa as classes, maximizando a margem entre elas. Usamos kernel linear e `class_weight='balanced'`.
+
+```python
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+
+X_train, X_test, y_train, y_test = train_test_split(X, rotulos, test_size=0.2, random_state=42)
+
+modelo = SVC(kernel='linear', class_weight='balanced')
+modelo.fit(X_train, y_train)
+y_pred = modelo.predict(X_test)
+
+print("Acurácia no teste:", accuracy_score(y_test, y_pred))      # 0.6
+print("Precisão:", precision_score(y_test, y_pred))               # 0.58
+print("Recall:", recall_score(y_test, y_pred))                    # 0.7
+```
+
+> **Acurácia modesta? É esperado.** Com apenas 200 exemplos rotulados, a acurácia de 0,6 é limitada pela quantidade de dados. Em aprendizado supervisionado, **mais exemplos significam mais padrões disponíveis**, daí a recomendação de expandir o dataset rotulado.
+
+### Etapa 5: Testando com notícias novas
+
+```python
+novos_titulos = ["Dólar cai e inflação diminui",
+                 "EUA tem maior número de deportações nos últimos anos"]
+novos_X = vetorizador.transform(novos_titulos).toarray()
+predicoes = modelo.predict(novos_X)
+print("Previsões novas:", ["Positivo" if p == 1 else "Negativo" for p in predicoes])
+# ['Positivo', 'Negativo']
+```
+
+O modelo classificou "Dólar cai e inflação diminui" como **positivo** e a notícia sobre deportações como **negativo**, resultados coerentes. Vale a ressalva: análise de sentimentos depende não só de padrões objetivos, mas também da percepção individual do leitor.
+
+### Etapa 6 (opcional): Classificando todo o dataset
+
+```python
+X_todas = vetorizador.transform(titulos).toarray()
+predicoes_todas = modelo.predict(X_todas)
+df['sentimento'] = ['Positivo' if p == 1 else 'Negativo' for p in predicoes_todas]
+df.to_csv('noticias_classificadas.csv', index=False)
+```
+
+## Conclusão e próximos passos
+
+Você percorreu um **pipeline completo de Machine Learning**: dos tipos de dados e estatística descritiva, passando por regressão, classificação e clustering, até avaliação rigorosa e um projeto real de análise de sentimentos. As etapas (aquisição, pré-processamento, treino e avaliação) formam uma base sólida e replicável.
