@@ -1,0 +1,142 @@
+---
+title: "Contagem de veículos com visão computacional: detectar não é contar"
+date: "2026-07-20"
+description: "Um estudo de caso com dados reais de uma gravação noturna: como YOLOv8, ByteTrack e uma linha virtual resolvem o problema de contar veículos sem duplicar a mesma detecção centenas de vezes."
+tags: ["Visão Computacional", "YOLOv8", "ByteTrack", "Python"]
+author: "Ronald Andrade"
+readingTime: "12 min"
+difficulty: "intermediate"
+---
+
+Moro de frente pra uma avenida muito movimentada. Uma vez tive a curiosidade de saber quantos carros passam. Então resolvi arrumar uma maneira de descobrir esse número, então resolvi apontar a câmera para a rua e começar um novo projeto.
+
+O plano parecia simples: gravar um vídeo, contar os carros, comparar horários. Na prática, esse projeto virou um estudo de caso sobre um problema que toda gravação de trânsito compartilha e que quase ninguém explica direito: um detector de objetos, sozinho, não sabe contar. Ele só sabe apontar. E apontar 30 vezes para o mesmo carro em 30 quadros consecutivos não é contagem, é ruído.
+
+Este artigo documenta a solução com dados reais de uma gravação noturna de 5 minutos: 67 carros, um detector (YOLOv8), um rastreador (ByteTrack) e uma ideia geométrica simples que resolve o problema de duplicidade de uma vez por todas.
+
+## O problema que a detecção sozinha não resolve
+
+Um detector de objetos como o YOLO recebe um quadro de vídeo e devolve caixas: "aqui tem um carro, com esta confiança, nesta posição". Ele faz isso quadro a quadro, sem memória alguma. Cada chamada ao modelo é um evento isolado.
+
+O problema é que um vídeo a 30 quadros por segundo mostra o mesmo carro atravessando a cena centenas de vezes antes de sair de quadro. Se a regra for "conte toda vez que aparecer uma detecção de carro", o resultado não é o número de carros que passaram, é o número de carros multiplicado pela quantidade de quadros em que cada um ficou visível. Um congestionamento leve viraria, nessa contagem ingênua, um número de trânsito capaz de colapsar qualquer cidade.
+
+> A pergunta central deixa de ser "onde estão os carros" e passa a ser "este carro que vejo agora é o mesmo que eu vi há dois quadros, ou é um carro novo?"
+
+Essa pergunta é exatamente o que separa detecção de rastreamento (_tracking_), e é o motivo pelo qual este projeto usa dois modelos, não um.
+
+## Detecção: YOLOv8 aponta onde estão os veículos
+
+O YOLOv8 (You Only Look Once, versão 8) é um detector de objetos treinado no conjunto COCO, que já reconhece nativamente as classes de interesse para trânsito:
+
+```python
+VEICULOS = {2: "carro", 3: "moto", 5: "onibus", 7: "caminhao"}
+```
+
+Rodando o modelo em um único quadro isolado, sem nenhum rastreamento envolvido, o resultado já é útil: caixas delimitadoras, uma classe e um grau de confiança por detecção.
+
+Vale notar o cenário real da gravação: câmera na janela de um apartamento, à noite, com galhos de árvore cobrindo boa parte do quadro e grades em primeiro plano. Não é um dataset de laboratório. E mesmo assim o modelo mantém confianças razoáveis (0.7 a 0.85) nos carros que cruzam a faixa mais próxima da câmera. As confianças caem bastante nos carros mais distantes e mais escuros — chegando a valores como 0.29 na mesma imagem em que outros carros marcam 0.65 e 0.74.
+
+Esse é um detalhe que qualquer projeto de contagem no mundo real precisa encarar: quanto mais longe e mais escuro, menos confiável a detecção, e o limiar de confiança que você escolhe (`--conf`) é uma escolha de compromisso entre contar de menos e contar de mais.
+
+## Rastreamento: dar uma identidade a cada carro
+
+O ByteTrack resolve exatamente o problema descrito acima. Ele recebe as detecções quadro a quadro e as associa ao longo do tempo, atribuindo um identificador numérico (`id`) que persiste enquanto o algoritmo considerar que está vendo o mesmo objeto.
+
+Na prática, isso significa que o mesmo Fiat branco que aparece nos quadros 3.780 a 3.820 de um vídeo recebe o mesmo `id` em todos eles. É essa persistência de identidade que transforma "uma sequência de detecções soltas" em "um veículo com trajetória".
+
+No código, isso é uma única chamada, porque o Ultralytics já integra o ByteTrack como rastreador padrão:
+
+```python
+stream = modelo.track(
+    source=args.video,
+    tracker="bytetrack.yaml",
+    classes=list(VEICULOS),
+    conf=args.conf,
+    persist=True,
+    stream=True,
+    verbose=False,
+)
+```
+
+O parâmetro `persist=True` é o que garante que os IDs continuem válidos entre um quadro e o próximo, em vez de o rastreador reiniciar a contagem a cada chamada. Sem ele, cada lote de quadros processado receberia uma numeração nova, e a identidade do carro se perderia exatamente no momento em que mais importa: entre um frame e o seguinte.
+
+> Em uma frase: a detecção responde "o que há neste quadro"; o rastreamento responde "quem é quem, quadro após quadro".
+
+## A linha virtual: o truque que faz a contagem funcionar
+
+Ter um ID persistente por carro já resolve a duplicidade dentro da mesma travessia, mas ainda não diz quando contar. Se eu simplesmente somasse "quantos IDs distintos apareceram no vídeo", carros que só passam pela borda da imagem, sem de fato atravessar a rua, também entrariam na conta.
+
+A solução é geométrica: definir uma linha imaginária atravessando a via e contar um veículo apenas no exato frame em que o centro da sua caixa delimitadora troca de lado em relação a essa linha.
+
+```python
+LINHA = ((0.05, 0.78), (0.95, 0.78))
+
+def lado_da_linha(ponto, a, b):
+    return (b[0] - a[0]) * (ponto[1] - a[1]) - (b[1] - a[1]) * (ponto[0] - a[0])
+```
+
+Essa função é o produto vetorial 2D entre o segmento da linha e o vetor até o ponto observado. O sinal do resultado diz de que lado da linha o ponto está; não importa o valor absoluto, só o sinal. A cada frame, o código compara o sinal atual com o sinal do frame anterior para aquele mesmo `id`:
+
+```python
+if anterior is not None and anterior * lado < 0 and tid not in ja_contados:
+    ja_contados.add(tid)
+    registros.append({...})
+```
+
+Se o produto dos dois sinais é negativo, a linha foi cruzada entre um frame e o outro. O `id` é adicionado a um conjunto de já contados (`ja_contados`), o que garante que, mesmo que o carro balance de um lado para o outro perto da linha por ruído de detecção, ele só entra na contagem uma vez.
+
+Repare também que a linha é definida em coordenadas relativas (`0.05` a `0.95` da largura, `0.78` da altura), não em pixels absolutos. Isso é proposital: a mesma configuração funciona em vídeos de resoluções diferentes, sem precisar recalcular a posição da linha manualmente toda vez.
+
+## Os dados: uma gravação real de 5 minutos
+
+Toda a análise que segue vem de uma gravação noturna real de aproximadamente 5 minutos, feita com o celular apoiado na janela de um apartamento, apontando para uma avenida com duas faixas de sentido. O vídeo foi processado com `contagem_carros.py`, e cada linha do CSV de saída representa um veículo contado, com horário, ID do rastreador, classe e sentido:
+
+```
+horario,id,classe,sentido,janela
+00:00:01,25,carro,subindo,00:00
+00:00:01,37,carro,descendo,00:00
+00:00:03,56,carro,subindo,00:00
+...
+00:04:36,3901,carro,subindo,00:00
+```
+
+Um detalhe que salta aos olhos ao olhar a coluna `id`: os números pulam de 25 para 37, depois para 56, 100, 129... Isso não é erro. O ByteTrack atribui um ID novo a cada objeto que ele começa a rastrear, incluindo pedestres, sombras em movimento ou qualquer detecção espúria que dure só alguns quadros e nunca chegue a cruzar a linha. Os IDs "faltantes" são objetos que o rastreador viu, mas que nunca geraram uma contagem porque nunca atravessaram a via virtual. O contador não perde carro nenhum; ele simplesmente não é a mesma coisa que "o próximo número inteiro".
+
+Somando os registros, a gravação capturou:
+
+- **67 veículos**, todos classificados como carro (nenhuma moto, ônibus ou caminhão cruzou a linha nesta janela específica)
+- **35 no sentido "descendo"** contra **32 no sentido "subindo"**, um fluxo praticamente equilibrado entre os dois sentidos da via
+- Uma taxa média de **14,6 carros por minuto**, mas essa média esconde o achado mais interessante dos dados
+
+## O que a média esconde: o trânsito anda em rajadas
+
+Dividindo a gravação em blocos de 30 segundos e contando quantos carros cruzaram a linha em cada bloco, o padrão que aparece não é nem de longe uniforme.
+
+Note o intervalo entre 30 segundos e 1 minuto de gravação: **zero carros**. E o intervalo seguinte, entre 1 minuto e 1m30s, também ficou perto de zero. Depois, uma rajada de 11 carros em 30 segundos. Esse tipo de padrão, alternando entre silêncio quase total e picos de mais de um carro por segundo, é a assinatura de um semáforo coordenado a alguma distância da câmera: os carros chegam represados em pelotão, não em fluxo contínuo. Uma média de "14,6 carros por minuto" sozinha nunca revelaria isso; ela sugere um fluxo constante que simplesmente não existe nos dados.
+
+Isso é uma lição que vale para qualquer análise de séries temporais de trânsito: a média é o resumo mais pobre que existe para um processo em rajadas. O maior gap sem nenhum carro na gravação inteira durou 64 segundos consecutivos, entre 00:00:25 e 00:01:29. Em seguida vieram 11 carros nos 30 segundos seguintes. Qualquer decisão de engenharia de tráfego baseada só na média por minuto ignoraria completamente esse comportamento de rajada, que é, na prática, o que mais gera a sensação de congestionamento.
+
+## Validação: o passo que a maioria dos projetos de visão computacional pula
+
+Um sistema de contagem automática só tem valor se alguém souber o quanto ele erra. É tentador publicar "67 carros" como se fosse um fato definitivo, mas 67 é a saída de um modelo, não uma verdade absoluta. Para saber se esse número presta, é preciso contar manualmente pelo menos uma parte do vídeo, assistindo quadro a quadro, e comparar com o resultado automático.
+
+Essa comparação revela os erros típicos desse tipo de sistema, e eles não são sutis quando você olha os frames de perto: motos por vezes confundidas com bicicletas, veículos parcialmente cobertos pela vegetação da árvore em primeiro plano recebendo uma confiança baixa demais para passar do limiar (`--conf 0.35`), e o risco de oclusão, quando um carro passa exatamente atrás de outro no ângulo da câmera e o rastreador perde a identidade momentaneamente. Nada disso invalida o método. Pelo contrário: é exatamente esse tipo de checagem que separa "um script que roda" de "um sistema de medição em que se pode confiar". Publicar um número de visão computacional sem essa validação manual é publicar um enfeite, não um dado.
+
+## O que fica desse exercício
+
+O resultado numérico desta gravação específica (67 carros, fluxo quase equilibrado entre os dois sentidos, rajadas de até 17 carros por meio minuto intercaladas com quase um minuto de rua vazia) importa menos do que o método por trás dele. A parte generalizável é a receita:
+
+1. Um detector aponta objetos por quadro, sem memória.
+2. Um rastreador dá identidade persistente a cada objeto ao longo dos quadros.
+3. Uma linha virtual e a troca de sinal de um produto vetorial decidem o instante exato da contagem, uma vez por veículo.
+4. Uma validação manual, ainda que parcial, transforma o número final de achismo em dado com margem de erro conhecida.
+
+Essa mesma receita, trocando só a posição da linha e as classes de interesse, serve para contar pessoas em uma catraca, bicicletas em uma ciclovia ou caixas em uma esteira. O problema de fundo é sempre o mesmo: como transformar uma sequência de detecções soltas, quadro a quadro, em uma contagem de eventos que aconteceram exatamente uma vez.
+
+### Referências e próximos passos
+
+- Zhang, Y. et al. "ByteTrack: Multi-Object Tracking by Associating Every Detection Box" (2022)
+- Documentação oficial do Ultralytics YOLOv8: modos `predict` e `track`
+- Como próximo passo natural para esta série: repetir a mesma gravação em um dia útil e em um fim de semana, no mesmo ponto exato, para isolar o efeito do dia da semana do efeito do horário, algo que esta gravação única não permite responder sozinha.
+
+Gostou deste artigo? O código completo do projeto, incluindo os scripts de contagem e de geração dos gráficos, está disponível para quem quiser rodar o mesmo experimento na própria rua.
