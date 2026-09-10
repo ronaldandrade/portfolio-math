@@ -1,12 +1,42 @@
 import Link from "next/link";
+import { PlayCircle, BookOpen, User, LinkIcon } from "lucide-react";
 import HomeCarousel from "./components/HomeCarrosel";
-import { getSortedPostsData } from "@/lib/posts"; 
-import { getLatestMaterial, getLatestVideo } from "@/lib/api"; // <--- Novas funções
+import PostCard from "./components/PostCard";
+import { getSortedPostsData } from "@/lib/posts";
+import { getLatestMaterial, getLatestVideo } from "@/lib/api";
+
+const atalhos = [
+  {
+    href: "/conteudos",
+    icon: PlayCircle,
+    title: "Vídeos",
+    description: "Aulas e visualizações matemáticas em vídeo.",
+  },
+  {
+    href: "/materiais",
+    icon: BookOpen,
+    title: "Materiais",
+    description: "PDFs, listas e recursos para baixar.",
+  },
+  {
+    href: "/sobre",
+    icon: User,
+    title: "Sobre mim",
+    description: "Quem escreve e por que este arquivo existe.",
+  },
+  {
+    href: "/links",
+    icon: LinkIcon,
+    title: "Links",
+    description: "Onde me encontrar fora daqui.",
+  },
+];
 
 export default async function Home() {
   // 1. Busca Post (Sistema de Arquivos MDX - Já é automático)
   const allPosts = getSortedPostsData();
   const latestPost = allPosts.length > 0 ? allPosts[0] : null;
+  const destaques = allPosts.slice(0, 4);
 
   // 2. Busca Vídeo (API do YouTube)
   const latestVideo = await getLatestVideo();
@@ -55,11 +85,65 @@ export default async function Home() {
         latestMaterial={latestMaterial}
       />
 
+      {/* ===== Trabalhos em destaque ===== */}
+      {destaques.length > 0 && (
+        <section className="w-full max-w-5xl mx-auto mb-24">
+          <header className="flex flex-wrap items-end justify-between gap-4 mb-8">
+            <div>
+              <span className="block font-mono text-xs tracking-[0.2em] uppercase text-primary mb-3">
+                Trabalhos
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+                O que tenho escrito
+              </h2>
+            </div>
+            <Link
+              href="/blog"
+              className="font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+            >
+              Ver todos ({allPosts.length}) →
+            </Link>
+          </header>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {destaques.map((post) => (
+              <PostCard key={post.slug} post={post} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ===== Atalhos para os outros formatos ===== */}
+      <section className="w-full max-w-5xl mx-auto mb-28">
+        <span className="block font-mono text-xs tracking-[0.2em] uppercase text-primary mb-3">
+          Explore também
+        </span>
+        <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-8">
+          Além dos artigos
+        </h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {atalhos.map((atalho) => (
+            <Link
+              key={atalho.href}
+              href={atalho.href}
+              className="group rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/50 hover:-translate-y-0.5"
+            >
+              <atalho.icon
+                size={20}
+                className="text-primary mb-4"
+                aria-hidden="true"
+              />
+              <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors mb-1">
+                {atalho.title}
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {atalho.description}
+              </p>
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
-
-
-
-
-

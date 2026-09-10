@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 import { getSortedPostsData } from '@/lib/posts'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://SEU_DOMINIO_AQUI.com' // <-- Coloque seu domínio final aqui quando tiver
+  const baseUrl = 'https://ramslog.com.br'
   
   // 1. Páginas estáticas
   const routes = [

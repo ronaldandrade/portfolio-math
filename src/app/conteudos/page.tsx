@@ -3,6 +3,7 @@ export default function ConteudosPage() {
   const videos = [
     { id: 1, title: "Aula de Porcentagem", date: "Fev 2026", url: "https://youtube.com/embed/Jb1W0EzuEME?si=WyOPuEz91Lxcxldc" },
     { id: 2, title: "Sistemas de Equações", date: "Jan 2026", url: "https://www.youtube.com/embed/zCsEQSQ1XEc?si=GVf9JOZPfDEpV5cP" },
+    { id: 3, title: "Visão Computacional na Prática", date: "Jan 2026", url: "https://youtube.com/embed/IiyNFJnynR4?feature=share" },
   ];
 
   return (

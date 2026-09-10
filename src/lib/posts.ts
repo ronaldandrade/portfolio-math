@@ -11,6 +11,9 @@ export interface PostMeta {
   date: string;
   description: string;
   tags?: string[];
+  author?: string;
+  readingTime?: string;
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
 }
 
 export function getSortedPostsData(): PostMeta[] {
@@ -35,7 +38,7 @@ export function getSortedPostsData(): PostMeta[] {
 
     return {
       slug,
-      ...(data as { title: string; date: string; description: string; tags: string[] }),
+      ...(data as Omit<PostMeta, 'slug'>),
     };
   });
 
@@ -48,10 +51,10 @@ export function getSortedPostsData(): PostMeta[] {
 export function getPostData(slug: string) {
   const fullPath = path.join(postsDirectory, `${slug}.mdx`);
   const fileContents = fs.readFileSync(fullPath, 'utf8');
-  
+
   // Retorna conteúdo cru e metadados
   const { content, data } = matter(fileContents);
-  
+
   return {
     slug,
     content,
