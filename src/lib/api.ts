@@ -22,33 +22,92 @@ export async function getLatestMaterial() {
 }
 
 // --- BUSCADOR DO YOUTUBE ---
-export async function getLatestVideo() {
+
+export interface Video {
+  id: string;
+  title: string;
+  description: string;
+  /** URL de embed, pronta para o iframe */
+  url: string;
+  /** Link normal do YouTube (para abrir fora do site) */
+  watchUrl: string;
+  thumb: string;
+  publishedAt: string;
+}
+
+type PlaylistItem = {
+  snippet: {
+    title: string;
+    description: string;
+    publishedAt: string;
+    resourceId?: { videoId?: string };
+    thumbnails?: Record<string, { url: string } | undefined>;
+  };
+};
+
+/**
+ * Busca os vídeos mais recentes do canal.
+ *
+ * Usa a playlist de uploads (`UU...`, que é o ID do canal `UC...` com o prefixo
+ * trocado) em vez do endpoint `search`: o resultado é o mesmo, mas custa
+ * 1 unidade de cota por chamada em vez de 100.
+ */
+export async function getChannelVideos(limit = 12): Promise<Video[]> {
   const API_KEY = process.env.YOUTUBE_API_KEY;
   const CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID;
 
-  if (!API_KEY || !CHANNEL_ID) return null;
+  if (!API_KEY || !CHANNEL_ID || !CHANNEL_ID.startsWith("UC")) return [];
+
+  // A playlist com todos os uploads do canal
+  const uploadsPlaylistId = `UU${CHANNEL_ID.slice(2)}`;
 
   try {
-    // Busca os vídeos mais recentes do canal
     const res = await fetch(
-      `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=snippet&order=date&maxResults=1&type=video`,
+      `https://www.googleapis.com/youtube/v3/playlistItems?key=${API_KEY}&playlistId=${uploadsPlaylistId}&part=snippet&maxResults=${limit}`,
       { next: { revalidate: 3600 } } // Cache por 1 hora (importante para não estourar cota do Google)
     );
 
+    if (!res.ok) {
+      console.error("Erro ao buscar YouTube:", res.status, await res.text());
+      return [];
+    }
+
     const data = await res.json();
+    const items: PlaylistItem[] = data.items ?? [];
 
-    if (!data.items || data.items.length === 0) return null;
+    return items.flatMap((item) => {
+      const videoId = item.snippet.resourceId?.videoId;
+      if (!videoId) return [];
 
-    const video = data.items[0];
-    
-    return {
-      title: video.snippet.title,
-      description: video.snippet.description,
-      url: `https://www.youtube.com/embed/${video.id.videoId}`,
-      thumb: video.snippet.thumbnails.high.url
-    };
+      const thumbs = item.snippet.thumbnails ?? {};
+      const thumb =
+        thumbs.maxres?.url ??
+        thumbs.standard?.url ??
+        thumbs.high?.url ??
+        thumbs.medium?.url ??
+        thumbs.default?.url ??
+        "";
+
+      return [
+        {
+          id: videoId,
+          title: item.snippet.title,
+          description: item.snippet.description,
+          url: `https://www.youtube.com/embed/${videoId}`,
+          watchUrl: `https://www.youtube.com/watch?v=${videoId}`,
+          thumb,
+          publishedAt: item.snippet.publishedAt,
+        },
+      ];
+    });
   } catch (error) {
     console.error("Erro ao buscar YouTube:", error);
-    return null;
+    return [];
   }
+}
+
+/** O vídeo mais recente do canal (usado no carrossel da home). */
+export async function getLatestVideo(): Promise<Video | null> {
+  const videos = await getChannelVideos(1);
+  return videos[0] ?? null;
 }
