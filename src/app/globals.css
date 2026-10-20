@@ -4,79 +4,71 @@
 
 @layer base {
   :root {
-    /* ===== MODO CLARO — paleta inspirada em rachelandrew.co.uk ===== */
+    /* ===== MODO CLARO: papel quente, tinta preta e verde-musgo ===== */
+    --background: 42 20% 94%;
+    --foreground: 0 0% 9%;
 
-    /* Fundo: branco limpo */
-    --background: 0 0% 100%;
+    --card: 42 14% 91%;
+    --card-foreground: 0 0% 9%;
+    --popover: 42 20% 94%;
+    --popover-foreground: 0 0% 9%;
 
-    /* Texto: quase-preto (#121212) */
-    --foreground: 0 0% 7%;
+    /* Primário: verde-musgo (#4a6b57) */
+    --primary: 144 19% 36%;
+    --primary-foreground: 42 20% 96%;
 
-    /* Cartões: branco com leve diferença */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 7%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 7%;
-
-    /* Cor primária: roxo vivo característico (#7a00df) */
-    --primary: 273 100% 44%;
-    --primary-foreground: 0 0% 100%;
-
-    /* Secundário: cinza muito claro */
-    --secondary: 0 0% 96%;
+    --secondary: 42 12% 89%;
     --secondary-foreground: 0 0% 12%;
 
-    /* Muted: cinza médio legível (#555) */
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 35%;
+    --muted: 42 12% 89%;
+    --muted-foreground: 0 0% 33%;
 
-    /* Accent: azul de links (#007cba) */
-    --accent: 200 100% 36%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 144 19% 36%;
+    --accent-foreground: 42 20% 96%;
 
     --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Bordas: cinza claro discreto */
-    --border: 0 0% 89%;
-    --input: 0 0% 89%;
-    --ring: 273 100% 44%;
+    --border: 40 9% 80%;
+    --input: 40 9% 80%;
+    --ring: 144 19% 36%;
 
-    --radius: 0.375rem;
+    /* Linha forte (régua do cabeçalho) */
+    --rule: 0 0% 9%;
+
+    --radius: 0rem;
   }
 
   .dark {
-    /* ===== MODO ESCURO — carvão quente (menos "dark") ===== */
+    /* ===== MODO ESCURO: carvão quente, verde mais claro ===== */
+    --background: 30 6% 11%;
+    --foreground: 40 15% 90%;
 
-    /* Fundo: carvão quente, não preto */
-    --background: 24 6% 12%;
-    --foreground: 40 15% 88%;
+    --card: 30 5% 15%;
+    --card-foreground: 40 15% 90%;
+    --popover: 30 6% 13%;
+    --popover-foreground: 40 15% 90%;
 
-    --card: 24 6% 14%;
-    --card-foreground: 40 15% 88%;
-    --popover: 24 6% 14%;
-    --popover-foreground: 40 15% 88%;
+    --primary: 144 24% 62%;
+    --primary-foreground: 30 6% 11%;
 
-    /* Primário: roxo suavizado para o escuro (#b083f0) */
-    --primary: 265 78% 73%;
-    --primary-foreground: 24 6% 12%;
+    --secondary: 30 5% 18%;
+    --secondary-foreground: 40 15% 90%;
 
-    --secondary: 24 5% 18%;
-    --secondary-foreground: 40 15% 88%;
+    --muted: 30 5% 18%;
+    --muted-foreground: 40 8% 66%;
 
-    --muted: 24 5% 18%;
-    --muted-foreground: 40 8% 65%;
-
-    /* Accent: azul claro para links (#5fb3e8) */
-    --accent: 203 75% 64%;
-    --accent-foreground: 24 6% 12%;
+    --accent: 144 24% 62%;
+    --accent-foreground: 30 6% 11%;
 
     --destructive: 0 60% 55%;
-    --destructive-foreground: 40 15% 88%;
+    --destructive-foreground: 40 15% 90%;
 
-    --border: 30 5% 22%;
-    --input: 30 5% 22%;
-    --ring: 265 78% 73%;
+    --border: 30 5% 24%;
+    --input: 30 5% 24%;
+    --ring: 144 24% 62%;
+
+    --rule: 40 15% 90%;
   }
 }
 
@@ -86,13 +78,13 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* Peso leve, como no daverupert.com */
-    font-weight: 350;
+    font-weight: 400;
     font-feature-settings: "liga" 0;
   }
-  /* Títulos com peso um pouco maior para hierarquia na mono */
+  /* Títulos na fonte de display, pesados e compactos */
   h1, h2, h3, h4 {
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-family: var(--font-display), ui-monospace, monospace;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
 }

@@ -1,32 +1,37 @@
-import { Github, Linkedin, Youtube } from "lucide-react";
+import { Github, Linkedin, Youtube, ArrowUpRight } from "lucide-react";
+import PageHeader from "../../components/PageHeader";
 
 const links = [
-  { name: "Canal no YouTube", url: "https://youtube.com/@ronaldandrade5395?si=6s2UynVKMm69tl1v", icon: Youtube, color: "hover:text-red-500" },
-  { name: "GitHub", url: "https://github.com/ronaldandrade", icon: Github, color: "hover:text-white" },
-  { name: "LinkedIn", url: "https://www.linkedin.com/in/ronaldandrademendonca/", icon: Linkedin, color: "hover:text-blue-500" },
+  { name: "Canal no YouTube", url: "https://youtube.com/@ronaldandrade5395?si=6s2UynVKMm69tl1v", icon: Youtube },
+  { name: "GitHub", url: "https://github.com/ronaldandrade", icon: Github },
+  { name: "LinkedIn", url: "https://www.linkedin.com/in/ronaldandrademendonca/", icon: Linkedin },
 ];
 
-export default function LinksPage() {
+export default function SocialLinksPage() {
   return (
-    <div className="max-w-md mx-auto py-20 px-4 flex flex-col items-center text-center">
-      <div className="w-24 h-24 bg-surface rounded-full mb-6 border-2 border-primary/20" /> {/* Avatar Placeholder */}
-      <h1 className="text-2xl font-bold text-text">Ronald Andrade</h1>
-      <p className="text-muted mb-8">Data Science & Matemática</p>
-      
-      <div className="w-full space-y-4">
+    <div className="w-full max-w-[1400px] mx-auto px-6 md:px-10 pb-20">
+      <PageHeader
+        eyebrow="Redes."
+        title="Onde me encontrar."
+        description="Data Science e Matemática."
+      />
+
+      <ul className="max-w-2xl border-t border-border">
         {links.map((link) => (
-          <a
-            key={link.name}
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`flex items-center justify-center gap-3 w-full p-4 bg-surface border border-muted/20 rounded-xl transition-all hover:scale-[1.02] hover:border-primary/40 text-text group`}
-          >
-            <link.icon className={`w-5 h-5 transition-colors ${link.color}`} />
-            <span className="font-medium">{link.name}</span>
-          </a>
+          <li key={link.name} className="border-b border-border">
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-4 py-5 px-2 text-lg font-extrabold font-display hover:text-primary transition-colors"
+            >
+              <link.icon size={20} className="text-muted-foreground group-hover:text-primary transition-colors" />
+              {link.name}
+              <ArrowUpRight size={18} className="ml-auto text-muted-foreground group-hover:text-primary transition-colors" />
+            </a>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

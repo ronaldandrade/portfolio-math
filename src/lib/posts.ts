@@ -12,6 +12,10 @@ export interface PostMeta {
   description: string;
   tags?: string[];
   author?: string;
+  /** Caminho em /public para a capa (ex.: '/capa-carros.jpg') */
+  cover?: string;
+  /** Rótulo da categoria; se ausente, usa a primeira tag */
+  category?: string;
   readingTime?: string;
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
 }

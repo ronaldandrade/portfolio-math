@@ -45,6 +45,7 @@ const config: Config = {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
+        rule: "hsl(var(--rule))",
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
@@ -55,11 +56,12 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
-      // Cascadia Mono em todo o site (estilo minimalista monoespaçado)
+      // Tudo monoespaçado: IBM Plex Mono no texto, JetBrains Mono nos títulos
       fontFamily: {
-        sans: ["var(--font-cascadia)", "ui-monospace", "SFMono-Regular", "monospace"],
-        mono: ["var(--font-cascadia)", "ui-monospace", "SFMono-Regular", "monospace"],
-        serif: ["var(--font-cascadia)", "ui-monospace", "monospace"],
+        sans: ["var(--font-body)", "ui-monospace", "SFMono-Regular", "monospace"],
+        mono: ["var(--font-body)", "ui-monospace", "SFMono-Regular", "monospace"],
+        serif: ["var(--font-body)", "ui-monospace", "monospace"],
+        display: ["var(--font-display)", "ui-monospace", "monospace"],
       },
     },
   },

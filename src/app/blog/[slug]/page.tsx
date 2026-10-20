@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: Props) {
   }
 
   return {
-    title: `${post.meta.title} | Ronald Math`,
+    title: `${post.meta.title} | Rams.Log`,
     description: post.meta.description,
   };
 }
@@ -59,7 +59,7 @@ export default async function PostPage({ params }: Props) {
   const { content, meta } = getPostData(slug);
 
   return (
-    <article className="max-w-3xl w-full px-6 py-12 mx-auto">
+    <article className="max-w-3xl w-full px-6 py-10 mx-auto">
       <Link 
         href="/blog" 
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors text-sm"
@@ -68,21 +68,21 @@ export default async function PostPage({ params }: Props) {
       </Link>
 
       <header className="mb-10">
-        <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
+        <h1 className="text-3xl md:text-5xl font-extrabold text-foreground mb-5 leading-[1.1]">
           {meta.title}
         </h1>
-        <div className="flex items-center gap-4 text-muted-foreground font-mono text-sm">
+        <div className="flex flex-wrap items-center gap-3 text-muted-foreground font-mono text-xs uppercase tracking-wider">
           <time>{meta.date}</time>
-          <span>•</span>
-          <div className="flex gap-2">
+          <span>|</span>
+          <div className="flex flex-wrap gap-3">
             {meta.tags?.map(tag => (
-              <span key={tag} className="text-primary">#{tag}</span>
+              <span key={tag} className="font-bold text-primary">{tag}</span>
             ))}
           </div>
         </div>
       </header>
 
-      <div className="prose dark:prose-invert prose-lg max-w-none prose-headings:font-semibold prose-a:text-accent prose-a:no-underline hover:prose-a:underline prose-code:font-normal">
+      <div className="prose dark:prose-invert prose-lg max-w-none prose-headings:font-display prose-headings:font-extrabold prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-code:font-normal">
         <MDXRemote
           source={content}
           components={mdxComponents}
@@ -97,7 +97,7 @@ export default async function PostPage({ params }: Props) {
 
       <div className="mt-16 pt-8 border-t border-border">
          <p className="text-muted-foreground italic">
-           Gostou deste artigo? <Link href="/links" className="text-primary underline">Inscreva-se na newsletter</Link>.
+           Gostou deste artigo? <Link href="/links" className="text-primary underline">Veja onde me encontrar</Link>.
          </p>
       </div>
     </article>

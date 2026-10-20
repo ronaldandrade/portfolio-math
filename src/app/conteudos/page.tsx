@@ -1,5 +1,6 @@
 import { getChannelVideos, type Video } from "@/lib/api";
 import VideoCard from "../components/VideoCard";
+import PageHeader from "../components/PageHeader";
 
 // Revalida a página de hora em hora: vídeos novos aparecem sozinhos
 export const revalidate = 3600;
@@ -31,13 +32,14 @@ export default async function ConteudosPage() {
   const videos = fetched.length > 0 ? fetched : fallbackVideos;
 
   return (
-    <section className="max-w-5xl w-full px-6 py-12">
-      <h1 className="text-3xl font-bold mb-2">Conteúdos Recentes</h1>
-      <p className="text-muted-foreground mb-10">
-        Tutoriais, visualizações matemáticas e devlogs — direto do canal.
-      </p>
+    <section className="w-full max-w-[1400px] mx-auto px-6 md:px-10 pb-20">
+      <PageHeader
+        eyebrow="Vídeos."
+        title="Conteúdos recentes."
+        description="Tutoriais, visualizações matemáticas e devlogs, direto do canal."
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 border-t border-border pt-10">
         {videos.map((video) => (
           <VideoCard key={video.id} video={video} />
         ))}

@@ -1,39 +1,45 @@
+import PageHeader from "../components/PageHeader";
+
+const stack = ["Python", "Deep Learning", "Computer Vision", "JavaScript", "LaTeX", "Manim"];
+
 export default function SobrePage() {
   return (
-    <section className="max-w-2xl px-6 py-12">
-      <h1 className="text-3xl font-bold mb-8 border-l-4 border-primary pl-4">
-        Sobre Mim
-      </h1>
+    <div className="w-full max-w-[1400px] mx-auto px-6 md:px-10 pb-20">
+      <PageHeader eyebrow="Sobre." title="Quem escreve por aqui." />
 
-      <div className="space-y-6 text-muted-foreground leading-relaxed text-lg">
-        <p>
-          Olá, sou o Ronald. Minha trajetória é marcada pela disciplina e pela lógica.
-          Atualmente militar, estou em plena transição de carreira para o mundo da 
-          Tecnologia, com foco em <strong>Data Science</strong> e <strong>Inteligência Artificial</strong>.
-        </p>
-
-        <p>
-          Sou pós-graduado na área e possuo uma forte aptidão para matemática e computação.
-          Meu objetivo não é apenas escrever código, mas usar a tecnologia para resolver 
-          problemas complexos, especialmente no campo da Visão Computacional.
-        </p>
-
-        <p>
-          Este site é o repositório central dos meus estudos, projetos, pesquisas e artigos sobre tecnologia e matemática.
-        </p>
-      </div>
-
-      {/* Exemplo de "Stack" ou Tecnologias */}
-      <div className="mt-12">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Tech Stack</h2>
-        <div className="flex flex-wrap gap-2">
-          {["Python", "Deep Learning", "Computer Vision", "JavaScript", "LaTeX", "Manim"].map((tech) => (
-            <span key={tech} className="px-3 py-1 bg-secondary text-secondary-foreground rounded-md text-sm">
-              {tech}
-            </span>
-          ))}
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-10 border-t border-border pt-10">
+        <div className="max-w-2xl space-y-6 text-muted-foreground leading-relaxed text-base md:text-lg">
+          <p>
+            Olá, sou o Ronald. Minha trajetória é marcada pela disciplina e pela lógica.
+            Atualmente militar, estou em plena transição de carreira para o mundo da
+            Tecnologia, com foco em <strong className="text-foreground">Data Science</strong> e{" "}
+            <strong className="text-foreground">Inteligência Artificial</strong>.
+          </p>
+          <p>
+            Sou pós-graduado na área e possuo uma forte aptidão para matemática e computação.
+            Meu objetivo não é apenas escrever código, mas usar a tecnologia para resolver
+            problemas complexos, especialmente no campo da Visão Computacional.
+          </p>
+          <p>
+            Este site é o repositório central dos meus estudos, projetos, pesquisas e artigos
+            sobre tecnologia e matemática.
+          </p>
         </div>
+
+        <aside className="lg:border-l border-border lg:pl-8">
+          <h2 className="flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.25em] mb-5">
+            <span className="h-[3px] w-5 bg-primary" aria-hidden="true" />
+            Tech stack
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {stack.map((tech) => (
+              <li key={tech} className="bg-card px-3 py-2 text-xs text-muted-foreground">
+                {tech}
+              </li>
+            ))}
+          </ul>
+        </aside>
       </div>
-    </section>
+    </div>
   );
 }

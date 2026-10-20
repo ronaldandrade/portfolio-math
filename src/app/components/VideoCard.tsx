@@ -16,8 +16,8 @@ export default function VideoCard({ video }: { video: Video }) {
   const [playing, setPlaying] = useState(false);
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/50 transition-all group">
-      <div className="aspect-video w-full bg-muted relative">
+    <div className="group">
+      <div className="aspect-video w-full bg-card relative overflow-hidden">
         {playing ? (
           <iframe
             width="100%"
@@ -54,11 +54,11 @@ export default function VideoCard({ video }: { video: Video }) {
         )}
       </div>
 
-      <div className="p-4">
-        <span className="text-xs text-primary font-mono">
+      <div className="pt-4">
+        <span className="text-xs text-muted-foreground font-mono">
           {formatDate(video.publishedAt)}
         </span>
-        <h3 className="font-semibold text-foreground mt-1 line-clamp-2">
+        <h3 className="font-sans text-base font-semibold tracking-normal text-foreground mt-1 line-clamp-2 group-hover:text-primary transition-colors">
           {video.title}
         </h3>
       </div>

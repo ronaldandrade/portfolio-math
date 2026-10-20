@@ -1,32 +1,37 @@
-import { Github, Linkedin, Youtube, BookOpen } from "lucide-react"; // Instale lucide-react se não tiver
+import { Github, Linkedin, Youtube, BookOpen, ArrowUpRight } from "lucide-react";
+import PageHeader from "../components/PageHeader";
+
+const links = [
+  { name: "Canal no YouTube", url: "https://youtube.com/@ronaldandrade5395?si=6s2UynVKMm69tl1v", icon: Youtube },
+  { name: "Meu GitHub", url: "https://github.com/ronaldandrade", icon: Github },
+  { name: "LinkedIn Profissional", url: "https://www.linkedin.com/in/ronaldandrademendonca/", icon: Linkedin },
+  { name: "Materiais de Estudo", url: "/materiais", icon: BookOpen },
+  { name: "Ler meus Artigos", url: "/blog", icon: BookOpen },
+];
 
 export default function LinksPage() {
-  const links = [
-    { name: "Canal no YouTube", url: "https://youtube.com/@ronaldandrade5395?si=6s2UynVKMm69tl1v", icon: Youtube, color: "hover:bg-red-600 hover:border-red-600" },
-    { name: "Meu GitHub", url: "https://github.com/ronaldandrade", icon: Github, color: "hover:bg-slate-700 hover:border-slate-700" },
-    { name: "LinkedIn Profissional", url: "https://www.linkedin.com/in/ronaldandrademendonca/", icon: Linkedin, color: "hover:bg-blue-600 hover:border-blue-600" },
-    { name: "Materias de Estudo", url: "/materiais", icon: BookOpen, color: "hover:bg-purple-600 hover:border-purple-600" },
-    { name: "Ler meus Artigos", url: "/blog", icon: BookOpen, color: "hover:bg-emerald-600 hover:border-emerald-600" },
-  ];
-
   return (
-    <div className="flex flex-col items-center w-full max-w-md px-6 py-12 mx-auto">
-      <img src="https://avatars.githubusercontent.com/u/69542454?v=4" className="w-24 h-24 bg-gradient-to-tr from-blue-500 to-purple-600 rounded-full mb-4 animate-pulse" />
-      <h1 className="text-2xl font-bold text-foreground">Ronald Andrade</h1>
-      <p className="text-muted-foreground mb-8 text-center"> Cientista de Dados & Matemático.</p>
+    <div className="w-full max-w-[1400px] mx-auto px-6 md:px-10 pb-20">
+      <PageHeader
+        eyebrow="Links."
+        title="Onde me encontrar."
+        description="Ronald Andrade, cientista de dados e matemático."
+      />
 
-      <div className="w-full space-y-3">
+      <ul className="max-w-2xl border-t border-border">
         {links.map((link) => (
-          <a
-            key={link.name}
-            href={link.url}
-            className={`flex items-center justify-center gap-3 w-full p-4 border border-border rounded-lg text-foreground font-medium transition-all ${link.color} hover:text-white`}
-          >
-            <link.icon size={20} />
-            {link.name}
-          </a>
+          <li key={link.name} className="border-b border-border">
+            <a
+              href={link.url}
+              className="group flex items-center gap-4 py-5 px-2 text-lg font-extrabold font-display hover:text-primary transition-colors"
+            >
+              <link.icon size={20} className="text-muted-foreground group-hover:text-primary transition-colors" />
+              {link.name}
+              <ArrowUpRight size={18} className="ml-auto text-muted-foreground group-hover:text-primary transition-colors" />
+            </a>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

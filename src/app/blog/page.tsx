@@ -1,11 +1,18 @@
 import Link from "next/link";
 import { getSortedPostsData } from "@/lib/posts";
 
-export default function BlogIndex() {
-  const posts = getSortedPostsData();
+export default async function BlogIndex({
+  searchParams,
+}: {
+  searchParams: Promise<{ tag?: string; mes?: string }>;
+}) {
+  const { tag, mes } = await searchParams;
+  const posts = getSortedPostsData().filter(
+    (p) => (!tag || p.tags?.includes(tag)) && (!mes || p.date.startsWith(mes))
+  );
 
   return (
-    <div className="max-w-2xl w-full px-6 py-20 md:py-28 mx-auto">
+    <div className="max-w-3xl w-full px-6 py-16 md:py-20 mx-auto">
       <header className="mb-16">
         <span className="block font-mono text-xs tracking-[0.2em] uppercase text-primary mb-5">
           Arquivo de estudos
@@ -19,6 +26,15 @@ export default function BlogIndex() {
         </p>
         <p className="mt-6 font-mono text-xs text-muted-foreground tabular-nums">
           {posts.length} {posts.length === 1 ? "registro" : "registros"}
+          {(tag || mes) && (
+            <>
+              {" · "}
+              {tag ?? mes}{" · "}
+              <Link href="/blog" className="underline hover:text-primary">
+                limpar filtro
+              </Link>
+            </>
+          )}
         </p>
       </header>
 

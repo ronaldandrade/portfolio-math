@@ -1,20 +1,28 @@
 import type { Metadata } from "next";
-import { Cascadia_Mono } from "next/font/google";
+import { IBM_Plex_Mono, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer"; // Importe o Footer
 import { ThemeProvider } from "./components/ThemeProvider";
 
-// Fonte monoespaçada que dá o tom minimalista de todo o site
-const cascadia = Cascadia_Mono({
+// Duas monoespaçadas: Plex para leitura, JetBrains (pesada) para títulos
+const plex = IBM_Plex_Mono({
   subsets: ["latin"],
-  variable: "--font-cascadia",
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-body",
+  display: "swap",
+});
+
+const jetbrains = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
+  variable: "--font-display",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Ronald Math",
-  description: "Portfólio de Matemática e Data Science",
+  title: "Rams.Log | Caderno de Estudos em IA",
+  description: "Notas sobre matemática, dados e inteligência artificial.",
 };
 
 export default function RootLayout({
@@ -24,11 +32,11 @@ export default function RootLayout({
 }>) {
   return (
     /* ADICIONE suppressHydrationWarning AQUI NA TAG HTML */
-    <html lang="pt-BR" className={cascadia.variable} suppressHydrationWarning>
+    <html lang="pt-BR" className={`${plex.variable} ${jetbrains.variable}`} suppressHydrationWarning>
       <body className="font-sans antialiased flex flex-col min-h-screen">
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >

@@ -23,7 +23,7 @@ export function DownloadGate({ fileUrl, fileName }: DownloadGateProps) {
     };
     checkUser();
   }, []);
-  if (loading) return <div className="h-12 w-full bg-border/30 animate-pulse rounded-lg" />;
+  if (loading) return <div className="h-12 w-full bg-border/30 animate-pulse" />;
 
   // SE LOGADO: Botão de Download Direto
   if (user) {
@@ -32,7 +32,7 @@ export function DownloadGate({ fileUrl, fileName }: DownloadGateProps) {
         href={fileUrl} 
         download 
         target="_blank"
-        className="flex items-center justify-center gap-2 w-full py-3 bg-emerald-500/10 text-emerald-600 border border-emerald-500/50 rounded-lg hover:bg-emerald-500/20 transition-all font-medium"
+        className="flex items-center justify-center gap-2 w-full py-3 bg-primary text-primary-foreground hover:opacity-90 transition-opacity text-sm font-medium"
       >
         <Download size={18} />
         Baixar {fileName}
@@ -45,12 +45,12 @@ export function DownloadGate({ fileUrl, fileName }: DownloadGateProps) {
     <div className="w-full flex flex-col gap-3">
       <Link 
         href="/login"
-        className="flex items-center justify-center gap-2 w-full py-3 bg-card border border-border hover:border-primary/50 text-foreground rounded-lg transition-all group shadow-sm"
+        className="flex items-center justify-center gap-2 w-full py-3 border border-foreground hover:bg-foreground hover:text-background text-foreground transition-colors group text-sm font-medium"
       >
-        <Lock size={18} className="text-muted group-hover:text-primary" />
+        <Lock size={18} className="" />
         <span>Login para baixar</span>
       </Link>
-      <p className="text-xs text-center text-muted">
+      <p className="text-xs text-center text-muted-foreground">
         Membros registrados baixam direto.
       </p>
     </div>
