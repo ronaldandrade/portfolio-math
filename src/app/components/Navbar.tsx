@@ -31,13 +31,14 @@ export default function Navbar() {
   return (
     <header className="w-full bg-background sticky top-0 z-50">
       <div className="max-w-[1400px] mx-auto px-6 md:px-10">
-        <div className="flex justify-between items-center py-5 border-b border-rule">
-          <Link href="/" className="block leading-none">
-            <span className="block font-display text-4xl md:text-5xl font-extrabold tracking-tight">
-              Rams<span className="text-primary">.Log</span>
+        <div className="flex justify-between items-center py-4 md:py-5 border-b border-rule">
+          <Link href="/" className="group flex flex-wrap items-center gap-2 md:gap-2.5 leading-none">
+            <span className="font-display font-extrabold text-xl md:text-2xl tracking-tight text-primary transition-opacity group-hover:opacity-80">
+              Ronald
             </span>
-            <span className="block mt-2 text-[10px] md:text-xs uppercase tracking-[0.25em] text-muted-foreground">
-              Matemática • Dados • Inteligência Artificial
+            <span className="text-muted-foreground/50 text-sm md:text-base">-</span>
+            <span className="text-[11px] md:text-xs uppercase tracking-[0.2em] text-muted-foreground group-hover:text-foreground transition-colors">
+              Matemática • Dados • IA
             </span>
           </Link>
 
