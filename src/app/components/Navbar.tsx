@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Menu, X, Sun, Moon, User } from "lucide-react";
+import { Menu, X, Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Links de navegação
@@ -67,14 +67,6 @@ export default function Navbar() {
               <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             </button>
-
-            <Link
-              href="/login"
-              className="hover:text-primary transition-colors"
-              aria-label="Área de membros"
-            >
-              <User size={20} />
-            </Link>
           </nav>
 
           {/* Mobile Toggle */}
@@ -121,13 +113,6 @@ export default function Navbar() {
                   {link.name}
                 </Link>
               ))}
-              <Link
-                href="/login"
-                onClick={() => setIsOpen(false)}
-                className="text-lg py-3 text-primary"
-              >
-                Acessar Área de Membros
-              </Link>
             </div>
           </motion.div>
         )}

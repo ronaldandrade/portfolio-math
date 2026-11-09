@@ -9,7 +9,7 @@ O projeto utiliza a arquitetura mais moderna do React/Next.js:
 - **Core:** [Next.js 16 (App Router)](https://nextjs.org/) - Framework React Híbrido.
 - **Linguagem:** [TypeScript](https://www.typescriptlang.org/) - Tipagem estática para segurança.
 - **Estilização:** [Tailwind CSS v4](https://tailwindcss.com/) + [PostCSS](https://postcss.org/) - Design System utilitário.
-- **Backend/DB:** [Supabase](https://supabase.com/) - Auth (Magic Link), Database (Postgres) e Storage.
+- **Backend/DB:** [Supabase](https://supabase.com/) - Database (Postgres) e Storage.
 - **Blog Engine:** MDX (Markdown + React) com `next-mdx-remote`.
 - **Animações:** [Framer Motion](https://www.framer.com/motion/).
 - **Ícones:** [Lucide React](https://lucide.dev/).
@@ -23,19 +23,17 @@ O projeto utiliza a arquitetura mais moderna do React/Next.js:
   /app
     /(site)           # Rotas públicas organizadas
     /api              # Endpoints (ex: captura de leads)
-    /auth             # Rotas de Callback do Supabase
     globals.css       # Variáveis CSS e Configuração Tailwind
     layout.tsx        # Layout Root (Navbar, Footer, Providers)
     page.tsx          # Home Page
   /components
-    /features         # Componentes lógicos (DownloadGate, etc.)
     /ui               # Componentes visuais reutilizáveis
     Navbar.tsx        # Navegação Principal
   /content
     /posts            # ARQUIVOS DO BLOG (.mdx) FICAM AQUI
   /lib
     posts.ts          # Lógica de leitura do Blog (Server Side)
-    supabase          # Clientes Supabase (Client e Server)
+    supabase          # Cliente Supabase
     data.ts           # Dados estáticos (Vídeos/Materiais)
 ```
 
@@ -79,7 +77,7 @@ df = pd.read_csv('dados.csv')
 
 ## Como Adicionar Materiais (PDFs)
 
-Para disponibilizar arquivos protegidos (que exigem login/email):
+Para disponibilizar arquivos para download gratuito:
 
 1. **Upload no Supabase:**
    - Vá ao Dashboard do Supabase > **Storage**.

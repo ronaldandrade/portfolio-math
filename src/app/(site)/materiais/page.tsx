@@ -1,5 +1,5 @@
-import { DownloadGate } from "../../components/features/DownloadGate";
 import PageHeader from "../../components/PageHeader";
+import { Download } from "lucide-react";
 
 const materials = [
   {
@@ -32,7 +32,7 @@ export default function MaterialsPage() {
       <PageHeader
         eyebrow="Materiais."
         title="Biblioteca de estudos."
-        description="PDFs, resumos e guias para baixar. O download é liberado para membros."
+        description="PDFs, resumos e guias para baixar gratuitamente."
       />
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 border-t border-border pt-10">
@@ -46,7 +46,16 @@ export default function MaterialsPage() {
               <p className="text-muted-foreground text-sm leading-relaxed mt-2">{item.description}</p>
             </div>
             <div className="mt-auto pt-4">
-              <DownloadGate fileName={item.title} fileUrl={item.fileUrl} />
+              <a
+                href={item.fileUrl}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-3 bg-primary text-primary-foreground hover:opacity-90 transition-opacity text-sm font-medium"
+              >
+                <Download size={18} />
+                Baixar {item.type}
+              </a>
             </div>
           </div>
         ))}
