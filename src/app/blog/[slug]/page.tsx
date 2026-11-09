@@ -10,9 +10,15 @@ import SimuladorLimites from "@/app/components/graficos/grafico_simulador_limite
 const mdxComponents = {
   GraficoAtivacao,
   SimuladorLimites,
+  table: ({ children, ...props }: React.TableHTMLAttributes<HTMLTableElement>) => (
+    <div className="my-6 w-full overflow-x-auto">
+      <table {...props}>{children}</table>
+    </div>
+  ),
 };
 
 // Plugins
+import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeHighlight from "rehype-highlight";
@@ -88,7 +94,7 @@ export default async function PostPage({ params }: Props) {
           components={mdxComponents}
           options={{
             mdxOptions: {
-              remarkPlugins: [remarkMath],
+              remarkPlugins: [remarkGfm, remarkMath],
               rehypePlugins: [rehypeKatex, rehypeHighlight],
             },
           }}
