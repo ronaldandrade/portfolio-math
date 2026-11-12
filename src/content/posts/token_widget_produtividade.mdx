@@ -1,0 +1,107 @@
+---
+title: "221 milhões de tokens depois: fiz um widget para controlar meus gastos e acabei mudando meu jeito de trabalhar"
+date: "2026-11-12"
+description: "Construí um painel para acompanhar o consumo de tokens e a cota do Claude e do Gemini na área de trabalho do Ubuntu. O que começou como um controle de gastos virou a ferramenta que destravou tarefas do trabalho e tirou meus projetos pessoais da gaveta."
+tags: ["Produtividade", "Agentes de IA", "Python", "Linux", "Projetos"]
+author: "Ronald Andrade"
+cover: "/token_widget.png"
+readingTime: "8 min"
+difficulty: "beginner"
+---
+
+Depois que eu comecei a usar agentes de IA no terminal todos os dias, esbarrei numa frustração constante: você está concentrado, no meio de um problema chato do trabalho ou finalmente avançando num projeto seu à noite, o raciocínio encaixou e, do nada, aparece o aviso de que o limite da sessão de 5 horas acabou. Só resta fechar o terminal e esperar.
+
+Eu uso o Claude Code e o Antigravity CLI (com os modelos Gemini) diariamente. Durante um bom tempo, tentei controlar os dois pelo website de cada um, na aba "uso", o que era meio chato. Eu não fazia ideia de quantos tokens uma conversa longa consumia, não sabia quanto da minha janela de 5 horas já tinha ido embora antes de começar uma tarefa grande e muito menos qual modelo pesava mais no meu uso real.
+
+Foi para sair desse escuro que criei o [Token Widget](https://github.com/ronaldandrade/token-widget), um painel pequeno em Python e GTK que fica fixo num canto da minha área de trabalho no Linux. Ele lê os arquivos que os próprios aplicativos já salvam no computador e me mostra, em tempo real, quantos tokens gastei hoje, nos últimos 7 dias, no mês e quanto falta para estourar a cota da sessão de cada ferramenta.
+
+A ideia inicial era só não ser pego de surpresa pelo bloqueio de limite. Só que deixar esses números visíveis o dia inteiro na tela teve um efeito que eu não esperava: mudou o jeito como eu resolvo problemas no trabalho e como eu toco meus projetos pessoais.
+
+![Captura do Token Widget no desktop GNOME em português, exibindo o consumo de tokens de hoje, 7 dias e 30 dias para Claude e Gemini, gráficos de barras diários e barras de progresso das janelas de sessão de 5 horas e 7 dias.](/token_widget.png)
+
+## O susto ao abrir a caixa-preta dos logs
+
+Antes de desenhar a interface do widget, precisei descobrir onde cada ferramenta guardava o histórico de uso no disco. Eu não queria usar chaves de API cobradas à parte só para consultar saldo, porque a graça era justamente monitorar minha assinatura normal sem gastar nada a mais.
+
+Fuçando nas pastas ocultas do sistema, vi que o dado já estava todo lá, só precisava ser garimpado:
+
+- O **Claude Code** salva cada sessão em arquivos de texto (`.jsonl`) dentro de `~/.claude/projects/`. O único cuidado ali foi limpar as linhas repetidas da mesma resposta para não contar o mesmo gasto três ou quatro vezes.
+- O **Antigravity CLI (Gemini)** guarda tudo em bancos SQLite dentro de `~/.gemini/antigravity-cli/conversations/`, mas esconde os contadores dentro de um campo binário (protobuf). Tive que abrir esses registros, entender onde ficavam os números de entrada, saída e cache, e montar um leitor simples em Python.
+- Para a **barra de limite das 5 horas**, aproveitei o recurso de linha de status do próprio Claude Code para salvar a porcentagem usada num arquivo de cache local, e fiz uma consulta opcional usando o login do sistema para o Gemini.
+
+Quando rodei o leitor pela primeira vez somando todo o meu histórico na máquina, tomei um susto. O contador marcou quase **221 milhões de tokens** em **1.907 chamadas** aos modelos (cerca de 159,6 milhões no Claude e 61,4 milhões no Gemini).
+
+Olhando só o número bruto, parece um volume absurdo. Mas, quando separei o que era texto novo do que era reaproveitamento de histórico, entendi como esses agentes funcionam de verdade por baixo do capô.
+
+| Ferramenta | Chamadas | Entrada nova | Lido do cache  | Saída gerada | Total movimentado |
+| ---------- | -------- | ------------ | -------------- | ------------ | ----------------- |
+| Claude     | 1.083    | 2,2 mil      | 158,39 milhões | 1,22 milhão  | 159,61 milhões    |
+| Gemini     | 824      | 4,91 milhões | 56,01 milhões  | 446,8 mil    | 61,36 milhões     |
+
+Mais de **96% dos tokens no Claude** e **91% no Gemini** eram apenas leitura de cache. Quando um agente lê dez arquivos do seu projeto, roda um teste, vê o erro e edita o código, ele reenvia o histórico da conversa a cada passo, mas quase tudo vem do cache. Para cada token de código ou resposta que os modelos escreveram para mim, eles leram mais de 130 tokens de contexto dos meus arquivos.
+
+Ver isso separado no widget tirou aquela impressão vaga de "estou gastando demais" e me deu um termômetro real.
+
+## Comparar modelos na prática, não pelo discurso
+
+Sem um painel na frente, a gente cria vícios. Meu vício era abrir sempre a mesma ferramenta, com o modelo mais pesado disponível, para fazer absolutamente qualquer coisa: desde planejar uma mudança grande em vários arquivos até formatar um JSON ou tirar uma dúvida boba de sintaxe.
+
+Quando comecei a acompanhar a barra da sessão e o histórico por modelo no widget, a diferença de peso entre eles ficou óbvia.
+
+No meu histórico do Claude, metade das chamadas foi no **Opus** (108,5 milhões de tokens), enquanto a outra metade se dividiu entre **Sonnet** e **Haiku**. Percebi que usar o Opus para tarefas mecânicas ou buscas simples drenava a barra de 5 horas muito rápido sem entregar nada melhor do que o Sonnet faria na metade do tempo.
+
+Hoje eu bato o olho no widget antes de começar:
+
+1. Se o problema exige pensar na estrutura do código, cruzar vários arquivos ou achar um bug traiçoeiro, vou no modelo mais forte do Claude sabendo quanto de fôlego tenho na janela.
+2. Se a tarefa é varrer arquivos, testar uma ideia rápida, montar um script direto ou se a barra do Claude já passou dos 80% (quando o widget deixa a barra amarela), eu simplesmente alterno para o Gemini no Antigravity CLI, que está com a cota livre.
+
+Essa troca simples eliminou as paradas forçadas no meio do dia. Em vez de bater no muro das 5 horas e perder o embalo, eu distribuo o peso entre os dois.
+
+## Como isso mudou meu dia a dia no trabalho
+
+A maior surpresa do widget não foi técnica, foi comportamental.
+
+Antes de enxergar minha cota em tempo real, eu tinha uma mania boba de "economizar" o agente durante o expediente. Aparecia um problema chato no meio da tarde: duas planilhas ou bases que não batiam, um arquivo de log gigante para filtrar, uma conferência repetitiva que tomava meia hora ou um script interno que precisava de ajuste. Meu primeiro pensamento era: _"Não vou gastar meus tokens com isso agora, vai que eu preciso para algo mais sério mais tarde. Depois eu faço na mão."_
+
+O resultado era sempre um dos dois: ou eu perdia uma hora inteira fazendo trabalho braçal que um script resolveria em cinco minutos, ou eu anotava para fazer "na sexta-feira" e o problema ia ficando para trás.
+
+Com o widget aberto na tela todo dia, caiu a ficha sobre duas coisas muito simples:
+
+- **Guardar cota de janela de 5 horas não serve para nada.** Quase todo dia a minha janela da tarde renovava com 40% ou 50% de limite sobrando. Quando chega o horário de renovação, o que você não usou não acumula para o dia seguinte, simplesmente zera. Eu estava economizando um recurso que sumia sozinho algumas horas depois.
+- **Resolver um problema pontual gasta muito menos do que parece.** Pedir ajuda para montar um script rápido de automação, limpar uma base de dados ou testar uma hipótese no trabalho costumava mexer só 2% ou 3% na barra da sessão.
+
+Quando percebi isso, parei de adiar os pequenos atritos do dia a dia. Surgiu uma tarefa operacional repetitiva ou uma análise chata no trabalho? Eu abro o terminal e resolvo na hora, em dez minutos.
+
+Isso me tornou muito mais produtivo não porque a IA passou a fazer tudo sozinha, mas porque sumiu a preguiça de começar. Aquela pilha de pequenas pendências técnicas que iam se acumulando ao longo da semana passou a ser resolvida no mesmo dia.
+
+## O empurrão que faltava para os meus projetos pessoais
+
+Se no trabalho o ganho foi de velocidade, nos meus projetos pessoais o ganho foi de continuidade.
+
+Se você é daquelas pessoas que trabalham o dia inteiro em frente ao computador, assim como eu, sabe muito bem que depois de um longo expediente a última coisa que a gente quer ver novamente é uma tela ou um bug chato. Você tem ideias boas para os seus próprios projetos, quer estudar um tema novo, melhorar seu site ou criar uma ferramenta, mas quando chega a noite o cansaço bate. Você tem 45 minutos livres antes de desligar tudo. Se tiver que gastar 35 desses minutos brigando com configuração de ambiente, erro de dependência ou documentação confusa de framework, você desiste no terceiro dia e o projeto volta para a gaveta.
+
+Olhar para o widget à noite e ver as barras ali, prontas para usar, com o gráfico dos últimos 7 dias mostrando se eu mantive o ritmo na semana, mudou minha rotina noturna.
+
+Passei a usar esses blocos curtos de 40 ou 50 minutos à noite com um objetivo fechado: pegar um projeto pessoal e avançar um passo completo até funcionar. Foi exatamente assim que vários projetos meus deixaram de ser pastas abandonadas e ganharam corpo nas últimas semanas:
+
+- O próprio **Token Widget**, que ganhou janela de configurações, tradução para português e inglês, instalador automático e tratamento de erros sem que eu precisasse perder um fim de semana inteiro lendo documentação do Cairo.
+- A estrutura de automação e revisão aqui do meu blog, além dos experimentos práticos que viraram os artigos mais recentes.
+- Outros projetos pessoais de dados e estudo que estavam parados esperando "um dia com tempo livre" (aquele dia que nunca chega).
+
+Quando você tira o peso do trabalho mecânico e sabe exatamente quanto fôlego a sua ferramenta ainda tem naquela noite, 45 minutos rendem o que antes exigia uma manhã inteira de um sábado.
+
+## O que ainda não é perfeito
+
+Como o widget foi feito para resolver a minha dor no meu ambiente, ele tem algumas limitações bem claras que não faço questão de esconder:
+
+- **Feito para X11.** Para o painel ficar colado no fundo da área de trabalho do GNOME sem aparecer no `Alt+Tab`, usei recursos de posicionamento do X11. No Wayland, o sistema não deixa um programa escolher sozinho onde vai ficar na tela, então ele perde parte da graça.
+- **Formatos internos que podem mudar.** Como o Antigravity CLI não documenta o formato do banco de dados dele, se uma atualização mudar a posição dos campos lá dentro, o contador do Gemini pode parar de somar até eu ajustar o código.
+- **Atualização do limite.** A barra da sessão do Claude depende do Claude Code estar aberto (ou ter rodado há pouco tempo) para atualizar a porcentagem, e a do Gemini usa um token de login que expira depois de mais ou menos uma hora com o terminal fechado. Quando isso acontece, o widget avisa que o dado é antigo ou que a janela já renovou.
+
+## No fim das contas
+
+O código inteiro do widget tem menos de 600 linhas de Python puro, sem instalar nenhuma biblioteca pesada além do que já vem no Ubuntu. Foi um projeto simples de um fim de semana, nascido de um incômodo bobo com limites de sessão.
+
+Mas o que fica desse exercício é como enxergar os próprios números muda a forma de trabalhar. Controlar os tokens e comparar o gasto entre o Claude e o Gemini foi útil, claro. Só que o verdadeiro ganho foi parar de tratar a ferramenta como algo escasso, resolver de imediato as pedras no sapato do trabalho diário e, principalmente, recuperar o prazer de ver meus projetos pessoais andando toda semana.
+
+Se você também usa o Claude Code ou o Antigravity no Linux e quiser testar (ou adaptar para o seu fluxo), o código está aberto lá no GitHub em [ronaldandrade/token-widget](https://github.com/ronaldandrade/token-widget).
