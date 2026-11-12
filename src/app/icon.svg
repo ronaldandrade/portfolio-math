@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Fundo carvão quente do tema escuro do blog -->
+  <rect width="64" height="64" rx="10" fill="#1c1a18"/>
+  <!-- Borda sutil estilo caderno técnico -->
+  <rect x="2.5" y="2.5" width="59" height="59" rx="8" fill="none" stroke="#4a6b57" stroke-width="2" stroke-opacity="0.65"/>
+  <!-- Letra R monoespaçada geométrica em tom papel quente (#f3f0e9) -->
+  <path d="M14 14 H31 C38.5 14 43 18.2 43 24.5 C43 29.5 39.8 33.2 34.5 34.4 L43.5 50 H34.8 L26.8 35.2 H21.5 V50 H14 Z M21.5 20.5 V29 H30.2 C33.8 29 35.6 27.3 35.6 24.7 C35.6 22.1 33.8 20.5 30.2 20.5 Z" fill="#f3f0e9"/>
+  <!-- Ponto / cursor quadrado verde-musgo (#7eb092) -->
+  <rect x="46" y="41" width="9" height="9" rx="1.5" fill="#7eb092"/>
+</svg>
