@@ -1,0 +1,108 @@
+---
+title: "Parando de repetir as mesmas instruções: como organizo meus agentes e skills no dia a dia"
+date: "2026-11-15"
+description: "Depois de cansar de corrigir os mesmos vícios dos modelos a cada conversa, passei a separar meu fluxo em skills reaproveitáveis e agentes com papéis isolados. O que funcionou, o que deu errado e o que aprendi montando essa estrutura."
+tags:
+  [
+    "Agentes de IA",
+    "Produtividade",
+    "Engenharia de Software",
+    "Linux",
+    "Automação",
+  ]
+author: "Ronald Andrade"
+readingTime: "9 min"
+difficulty: "beginner"
+---
+
+Quando comecei a usar agente de IA pelo terminal, tudo fluía muito bem. Você pede uma alteração, ele lê os arquivos, edita o código e resolve o problema. Só que, depois de algumas semanas usando todos os dias, aparece um cansaço novo: o cansaço de dar exatamente as mesmas instruções pra ferramenta em toda sessão nova.
+
+Eu me pegava digitando as mesmas correções dezenas de vezes. _"Não faz commit escrito só `ajustes`, explica o que mudou."_ _"Tira essas frases de vendedor do README e mostra logo o comando para rodar."_ _"Para de encher o texto de travessões e de listas com três adjetivos."_ _"Não dá push direto na branch principal."_
+
+Os modelos de IA não fazem isso por mal. O problema é que cada janela nova começa do zero, sem memória das combinações que você fez ontem. Enquanto eu tratasse o agente como um chat em que tudo é combinado no improviso, eu ia continuar gastando tempo e paciência repetindo regra básica.
+
+Foi para sair desse ciclo que comecei a organizar meu ambiente em camadas bem diferentes: **skills** (pequenos manuais de habilidades que entram em cena só quando são chamados) e **agentes** com fluxos de trabalho divididos em etapas.
+
+## O erro do arquivo único gigante
+
+Minha primeira tentativa de resolver a falta de memória foi o caminho mais óbvio: criar um arquivo de instruções fixas na raiz do projeto com todas as minhas regras de código, de escrita, de git e de formatação.
+
+Funcionou por três dias. Conforme a lista de regras crescia, dois problemas apareceram rápido:
+
+1. **Desperdício de contexto.** Esse arquivo principal é lido pelo agente em absolutamente toda mensagem. Se você está só corrigindo duas linhas de um script em Python, o modelo ainda assim precisa carregar todas as regras de como escrever um artigo para o blog ou de como formatar um commit. Como mostrei no post sobre o [Token Widget](/blog/token_widget_produtividade), contexto acumulado a cada passo custa caro na cota da sessão.
+2. **O modelo começa a ignorar metade da lista.** Quando um prompt inicial tem regras demais sobre assuntos misturados, a atenção do modelo dilui. Ele segue as primeiras linhas e esquece o resto no meio da tarefa.
+
+A solução foi enxugar o arquivo principal ao mínimo possível (só o que vale para qualquer tarefa naquele repositório) e mover todo o resto para as skills.
+
+## Como funcionam as minhas skills
+
+Uma skill nada mais é do que uma pasta com um manual curto (`SKILL.md`) e, quando necessário, alguns scripts de apoio. A grande vantagem é que o agente lê apenas uma linha de descrição de cada skill ao iniciar. Ele só abre o manual completo quando a tarefa que você pediu bate com aquela descrição.
+
+Para não ter que manter cópias duplicadas no computador, criei uma pasta central na minha máquina e conectei essa mesma pasta, usando links simbólicos do Linux, tanto no Claude Code quanto no Antigravity CLI. Assim, quando ajusto uma regra, as duas ferramentas aprendem na mesma hora.
+
+Hoje, quase todo trabalho repetitivo que faço passa por uma dessas skills pessoais:
+
+- Na hora de fazer **commits**, em vez de aceitar mensagens vagas como `fix` ou `update`, a skill obriga o agente a rodar o teste antes, ler o `git diff` real do que foi alterado, separar mudanças que não têm relação entre si em commits diferentes e escrever o motivo da alteração. Ela também instala um pequeno script no repositório que barra o commit se a mensagem vier fora do padrão.
+- Para o **README de projeto**, como gosto de documentação direta (uma frase dizendo o que o programa faz, os comandos exatos para instalar e rodar, a árvore de pastas, como funciona por dentro e uma seção honesta de limitações), a skill proíbe o agente de inventar funcionalidades que não estão no código e exige que todo comando listado tenha sido testado no terminal antes de entrar no texto.
+- Na **revisão de código**, tenho um roteiro com scripts de análise para checar pontos cegos comuns, segurança básica e padrões do projeto antes de fechar uma entrega.
+- Para **escrita e limpeza de texto**, criei uma skill que corta os vícios mais comuns de modelos de linguagem (como estruturas do tipo _"mais do que um X, um Y"_, travessões em todo parágrafo, ideias sempre agrupadas de três em três e frases finais de efeito que não dizem nada), mantendo o texto com a minha voz. Ela vem acompanhada de um script em Python que varre o arquivo apontando a linha exata onde esses padrões escaparam.
+
+## Quando uma skill não basta: desenhando agentes em etapas
+
+As skills resolvem muito bem tarefas isoladas, como fazer um commit ou limpar um texto. Mas existem trabalhos que envolvem várias fases diferentes e que dão errado quando você tenta fazer tudo num único pedido.
+
+Ao longo dos últimos meses, montei alguns agentes para resolver problemas recorrentes meus, tanto de escrita quanto de organização de informações. Sem entrar nos nomes internos de cada pasta, três exemplos mostram bem como mudei meu jeito de montar esses fluxos.
+
+### 1. O fluxo de escrita e checagem de fatos
+
+No começo, quando eu pedia ajuda para transformar minhas anotações de um experimento em rascunho de post, eu pedia para o mesmo agente escrever e conferir se todos os números e referências estavam certos.
+
+Isso quase sempre falha por um motivo simples: quem acabou de escrever um argumento tende a concordar com o próprio texto. Se o modelo escreveu uma informação imprecisa no parágrafo dois, na hora de revisar ele lê aquilo com o contexto viciado e aprova o próprio erro.
+
+Para resolver isso, dividi o agente em etapas separadas que conversam por meio de arquivos no disco:
+
+1. Primeiro, o agente lê minhas notas brutas e extrai todas as afirmações técnicas, números e datas para um arquivo separado, numerando uma por uma.
+2. Em seguida, entra um **subagente isolado de checagem**. Esse subagente não vê o rascunho do texto nem a minha argumentação; ele recebe apenas a lista fria de afirmações. O trabalho dele é conferir item por item no código ou nas fontes e marcar como confirmado, incorreto ou "não encontrado" (essa terceira opção é fundamental, porque sem ela o modelo costuma aprovar por omissão o que não conseguiu achar).
+3. O fluxo trava num portão de decisão e me mostra apenas o que deu problema ou dúvida. Eu decido o que corrigir ou cortar, e só então o texto segue para a formatação final e abertura de Pull Request para eu revisar o visual antes de publicar.
+
+### 2. O coletor e resumidor de notícias
+
+Outro incômodo que eu tinha era acompanhar atualizações de vários sites e fontes diferentes sem perder meia hora toda manhã abrindo abas repetidas ou lendo a mesma notícia requentada.
+
+Montei um agente enxuto que roda com permissões restritas. Ele lê um arquivo simples com a minha lista de fontes, consulta outro arquivo de texto onde ficam gravados todos os links que ele já resumiu em dias anteriores e busca apenas o que é inédito. Para cada novidade real, ele escreve duas ou três linhas em português direto com o link original e salva num resumo do dia.
+
+O detalhe mais importante desse agente está nas travas: se um site falhar ou bloquear a leitura, ele é proibido de adivinhar pelo título ou inventar notícia. Ele apenas anota na seção de falhas do relatório e atualiza a lista de links lidos. É um fluxo simples, sem banco de dados complexo, que funciona justamente porque cada execução deixa um arquivo claro no disco.
+
+### 3. O organizador de estudos e conteúdos curtos
+
+Quando criei um fluxo para organizar resumos de estudo e postagens curtas sobre tecnologia ao longo de uma trilha de temas, esbarrei num problema clássico de gasto de tokens: para o agente não repetir assuntos que eu já tinha abordado semanas atrás, a saída ingênua seria mandar ele ler todos os arquivos já escritos na pasta. Com trinta ou quarenta textos acumulados, isso consumiria uma fortuna de contexto a cada execução.
+
+A solução foi criar uma regra rígida de economia no agente: ele é proibido de abrir os arquivos antigos para escolher o próximo tema. Em vez disso, ele lê apenas um índice leve em JSON com o registro do que já saiu e um mapa de temas pendentes. Ele faz no máximo duas buscas rápidas sobre novidades da semana, cruza com a trilha de fundamentos, escreve os rascunhos novos e já passa a skill de limpeza de texto antes de salvar e atualizar o índice.
+
+## O que aprendi montando esses fluxos
+
+Depois de quebrar a cabeça com agentes que ignoravam instruções ou atropelavam etapas, algumas regras práticas viraram lei nos meus projetos:
+
+### Regra exata vira script, não pedido no prompt
+
+Se uma regra pode ser verificada por código (como "a data precisa estar entre aspas", "o texto não pode ter dois títulos principais", "o arquivo precisa compilar sem erro" ou "o commit precisa seguir o formato"), não peça para o modelo lembrar disso. Ele vai esquecer justamente no dia em que você estiver com pressa.
+
+Coloque essa verificação num script pequeno e amarre num _hook_ automático que roda logo depois que o agente edita o arquivo. Quando o script devolve o erro no terminal, o próprio agente lê a falha e corrige na hora, antes mesmo de devolver a resposta para você.
+
+O mesmo vale para ações perigosas: escrever "nunca faça push direto na branch principal" num arquivo de texto é apenas um pedido educado. Bloquear o comando nas configurações de permissão da ferramenta é uma trava de verdade. Eu uso os dois: o texto explica o motivo para o agente não ficar tentando à toa, e a trava garante que ele não faça mesmo se errar.
+
+### Faça cada etapa deixar um arquivo que você consiga abrir
+
+Quando um agente faz cinco coisas diferentes dentro da cabeça dele e te entrega só o resultado final, é muito difícil descobrir onde ele tropeçou. Quando cada etapa grava um arquivo intermediário simples (uma lista de itens extraídos, um relatório de checagem, um histórico de links lidos), você bate o olho por dez segundos e sabe exatamente o que aconteceu.
+
+### Teste o agente plantando erros de propósito
+
+A pior armadilha ao criar um agente de revisão ou checagem é confiar nele porque ele produziu um relatório bonito. Quando montei meu fluxo de checagem, peguei um texto antigo e plantei três mentiras de propósito: um número trocado, um ano errado e um erro num trecho de código.
+
+Se o agente deixar passar qualquer um dos três como correto, as instruções dele ainda estão frouxas demais. Fazer esse teste rápido antes de colocar o agente para trabalhar no dia a dia poupa muita dor de cabeça depois.
+
+## No fim das contas
+
+Usar bem agentes de IA no trabalho e nos projetos pessoais tem muito pouco a ver com achar uma "frase mágica" de prompt. Tem a ver com engenharia de rotina: observar onde você está se repetindo, transformar aquele conhecimento num manual curto (uma skill) ou num fluxo com etapas separadas, e colocar scripts simples para vigiar o que não pode dar errado.
+
+Dá um pequeno trabalho organizar essas pastas e scripts na primeira vez. Mas, a partir do momento em que a ferramenta já conhece o seu padrão de commit, o seu jeito de documentar e o seu estilo de escrita sem que você precise explicar nada, trabalhar no terminal fica muito mais leve.
