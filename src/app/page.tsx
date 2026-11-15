@@ -58,11 +58,8 @@ export default async function Home() {
         <section className="pt-10 pb-10">
           <p className="flex items-center gap-4 font-mono text-xs md:text-sm font-medium uppercase tracking-[0.3em] mb-5">
             <span className="h-[3px] w-8 bg-primary" aria-hidden="true" />
-            Caderno de estudos.
+            Notas sobre matemática, dados, IA e outras coisas.
           </p>
-          <h1 className="text-4xl md:text-6xl xl:text-[4rem] font-extrabold leading-[1.05] mb-6">
-            Notas sobre matemática, dados e IA.
-          </h1>
           <p className="max-w-2xl text-base md:text-lg leading-relaxed text-muted-foreground">
             Artigos, projetos e anotações sobre machine learning, visão
             computacional, séries temporais e muito mais. Conteúdo técnico,
