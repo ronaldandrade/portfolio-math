@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const navLinks = [
   { name: "Artigos", href: "/blog" },
   { name: "Vídeos", href: "/conteudos" },
+  { name: "Laboratório", href: "/laboratorio" },
   { name: "Materiais", href: "/materiais" },
   { name: "Sobre", href: "/sobre" },
 ];
@@ -28,6 +29,9 @@ export default function Navbar() {
 
   const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
+  // O laboratório tem cabeçalho próprio
+  if (pathname.startsWith("/laboratorio")) return null;
+
   return (
     <header className="w-full bg-background sticky top-0 z-50">
       <div className="max-w-[1400px] mx-auto px-6 md:px-10">
@@ -43,7 +47,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Menu */}
-          <nav className="hidden md:flex items-center gap-10">
+          <nav className="hidden md:flex items-center gap-6 lg:gap-10">
             {navLinks.map((link) => (
               <Link
                 key={link.name}

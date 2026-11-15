@@ -1,0 +1,99 @@
+/*
+ * Identidade do laboratório. Conceito: bancada de fotografia. Fundo cinza
+ * neutro de cartão de calibração, painéis claros como cópias sobre a mesa,
+ * azul de carta de cores como destaque e amarelo só nas marcas de visor.
+ * Os tokens abaixo sobrescrevem os do blog apenas dentro de `.lab`.
+ */
+.lab {
+  --background: 90 5% 93%;
+  --foreground: 210 17% 9%;
+  --card: 60 11% 97%;
+  --card-foreground: 210 17% 9%;
+  --popover: 60 11% 97%;
+  --popover-foreground: 210 17% 9%;
+  --primary: 214 67% 34%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 90 4% 89%;
+  --secondary-foreground: 210 17% 9%;
+  --muted: 90 4% 89%;
+  --muted-foreground: 213 5% 35%;
+  --accent: 214 67% 34%;
+  --accent-foreground: 0 0% 100%;
+  --border: 100 3% 79%;
+  --input: 100 3% 79%;
+  --ring: 214 67% 34%;
+  --rule: 210 17% 9%;
+  --lab-mark: 42 85% 48%;
+
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-lab-text), system-ui, sans-serif;
+}
+
+.dark .lab {
+  --background: 216 11% 9%;
+  --foreground: 80 6% 91%;
+  --card: 214 10% 13%;
+  --card-foreground: 80 6% 91%;
+  --popover: 214 10% 13%;
+  --popover-foreground: 80 6% 91%;
+  --primary: 213 72% 71%;
+  --primary-foreground: 216 11% 9%;
+  --secondary: 214 9% 17%;
+  --secondary-foreground: 80 6% 91%;
+  --muted: 214 9% 17%;
+  --muted-foreground: 210 5% 65%;
+  --accent: 213 72% 71%;
+  --accent-foreground: 216 11% 9%;
+  --border: 213 8% 24%;
+  --input: 213 8% 24%;
+  --ring: 213 72% 71%;
+  --rule: 80 6% 91%;
+  --lab-mark: 44 88% 58%;
+}
+
+.lab h1,
+.lab h2,
+.lab h3,
+.lab h4 {
+  font-family: var(--font-lab-display), system-ui, sans-serif;
+  font-stretch: 112%;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+/* Rótulo técnico: mono do blog, o elo visual entre os dois sites */
+.lab .lab-mono {
+  font-family: var(--font-body), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cantos de visor de câmera em volta de um elemento */
+.lab .visor {
+  position: relative;
+}
+.lab .visor::before,
+.lab .visor::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  pointer-events: none;
+  --m: hsl(var(--lab-mark));
+  --l: 26px;
+  --t: 3px;
+  background:
+    linear-gradient(var(--m), var(--m)) top left / var(--l) var(--t),
+    linear-gradient(var(--m), var(--m)) top left / var(--t) var(--l),
+    linear-gradient(var(--m), var(--m)) bottom right / var(--l) var(--t),
+    linear-gradient(var(--m), var(--m)) bottom right / var(--t) var(--l);
+  background-repeat: no-repeat;
+}
+.lab .visor::after {
+  transform: scaleX(-1);
+}
+
+.lab :focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}

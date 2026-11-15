@@ -1,8 +1,15 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Github, Linkedin, Youtube, Mail } from "lucide-react";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const pathname = usePathname();
+
+  // O laboratório tem rodapé próprio
+  if (pathname.startsWith("/laboratorio")) return null;
 
   return (
     <footer className="w-full mt-auto">

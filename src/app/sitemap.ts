@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { getSortedPostsData } from '@/lib/posts'
+import { EXPERIMENTOS } from './components/lab/registry'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://ramslog.com.br'
@@ -11,6 +12,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/blog',
     '/conteudos',
     '/materiais',
+    '/laboratorio',
+    ...EXPERIMENTOS.map((e) => `/laboratorio/${e.slug}`),
     '/links',
   ].map((route) => ({
     url: `${baseUrl}${route}`,
