@@ -1,0 +1,84 @@
+---
+title: "Cinco livros abertos e um problema na mesa: como eu estudo machine learning e visão computacional"
+date: "2026-11-18"
+description: "Durante anos eu li livro técnico de capa a capa e esqueci quase tudo em poucas semanas. Hoje estudo a partir de um problema, uso cada livro para uma coisa diferente, reimplemento antes de importar a biblioteca e só considero que aprendi quando consigo escrever sobre o assunto."
+tags: ["Machine Learning", "Visão Computacional", "Estudos", "Produtividade"]
+author: "Ronald Andrade"
+cover: "/estante_estudos_ml.jpg"
+readingTime: "10 min"
+difficulty: "beginner"
+---
+
+Por muito tempo, meu jeito de estudar machine learning era o mesmo da faculdade: escolher um livro bom, começar no capítulo 1 e ir até o fim. Funcionava enquanto eu estava lendo. Três semanas depois de fechar o livro, eu lembrava dos títulos dos capítulos e de quase nada do que tinha dentro deles.
+
+O problema não era o livro. Eu lia sem nenhuma pergunta na cabeça, então nada do que entrava tinha onde se prender. Demorei para perceber que o que eu realmente aprendia, e lembrava meses depois, vinha sempre de algum projeto em que eu tinha travado e precisado sair do buraco.
+
+Este post é sobre o processo que fui montando a partir disso. Os livros aparecem, porque estão sempre abertos na mesa, mas o assunto é o que faço com eles.
+
+![Cinco livros lado a lado numa prateleira escura: Hands-On Machine Learning (3ª edição), de Aurélien Géron; Computer Vision: Algorithms and Applications (2ª edição), de Richard Szeliski; Deep Learning, de Goodfellow, Bengio e Courville; Dive into Deep Learning, de Zhang, Lipton, Li e Smola; e AI Engineering, de Chip Huyen.](/estante_estudos_ml.jpg)
+
+## Começo por um problema, não por um capítulo
+
+Quase tudo que estudei de visão computacional no último ano começou com uma pergunta concreta. Quando resolvi [contar os carros da avenida em frente de casa](/blog/contagem_carros_visao_computacional), eu não sabia direito como um detector decide que duas caixas são o mesmo objeto, nem como um rastreador mantém o ID de um carro de um quadro para o outro. Essas duas dúvidas me levaram a ler sobre supressão de não máximos, IoU e rastreamento, e eu li com muito mais atenção do que leria se o capítulo fosse só o próximo da fila.
+
+Depois, quando quis saber se o YOLOv8 era mesmo a melhor escolha para aquele projeto, a pergunta virou outra: como se mede um detector de forma justa? Isso me levou a estudar mAP, latência e precisão numérica, e terminou no [benchmark de 28 detectores](/blog/benchmark_detectores_objetos) rodando no meu notebook.
+
+A regra que tirei disso é simples. Antes de abrir um livro, escrevo numa linha o que quero conseguir fazer quando terminar. "Entender redes convolucionais" é vago demais. "Explicar por que uma convolução 3×3 empilhada vê uma região maior da imagem do que 3×3 pixels" já me diz quais seções ler e quando posso parar.
+
+## Cada livro tem uma função diferente
+
+Com a pergunta definida, vou atrás dela em livros diferentes, porque cada um responde de um jeito. Não leio nenhum deles inteiro em sequência.
+
+O **Hands-On Machine Learning**, do Géron, é por onde entro quando o assunto é novo para mim. Ele vai direto para o código, com scikit-learn e Keras, e me deixa com algo rodando no mesmo dia. Uso como mapa: depois de um capítulo dele, sei quais termos procurar nos outros.
+
+O **Szeliski** é a referência de visão computacional que fica aberta do lado enquanto programo. Ele cobre de formação de imagem e geometria de câmeras até reconhecimento, e é denso demais para ler como romance. Consulto por seção, quando preciso entender de onde vem uma técnica que estou usando.
+
+O livro **Deep Learning**, de Goodfellow, Bengio e Courville, entra quando quero entender por que algo funciona. Regularização, otimização e o motivo de certas arquiteturas treinarem melhor que outras estão lá com calma. Leio devagar, um tópico por vez.
+
+O **Dive into Deep Learning** faz a ponte entre esses dois mundos. Cada conceito vem acompanhado de uma implementação do zero em notebook, e é nele que me apoio quando decido reescrever uma camada ou um laço de treino com as minhas próprias mãos.
+
+O **AI Engineering**, da Chip Huyen, é o mais recente da pilha e responde outro tipo de pergunta: o que acontece quando o modelo sai do notebook e vira um sistema que outras pessoas usam. Avaliação, custo, latência, como montar aplicações em cima de modelos grandes. Ele me fez olhar para os meus próprios projetos com mais cuidado na hora de medir se estão funcionando de verdade.
+
+Na prática, uma mesma dúvida costuma passar por dois ou três deles. Leio a versão prática, depois a explicação mais teórica e, se ainda não ficou claro, a implementação comentada. Quando as três contam a mesma história com palavras diferentes, sei que entendi.
+
+## Anoto com as minhas palavras, e ligo uma nota na outra
+
+Durante muito tempo eu sublinhava. Sublinhar dá a sensação de estudo, mas no fim é só o texto do autor pintado de amarelo.
+
+Hoje minhas anotações vão para o Obsidian, num esquema inspirado no Zettelkasten. Cada nota tem uma ideia só, escrita do meu jeito, como se eu estivesse explicando para alguém que não leu o livro. Se não consigo escrever a nota sem olhar a página, é sinal de que ainda não entendi e volto para a leitura.
+
+O que mais ajuda são os links entre notas. A nota sobre IoU aponta para a de supressão de não máximos, que aponta para a de mAP, que aponta para o experimento do benchmark. Quando volto a um assunto meses depois, não começo do zero: abro uma nota e o caminho até o resto já está lá.
+
+## Reimplemento antes de importar a biblioteca
+
+Esse é o passo que mais mudou meu entendimento. Antes de usar `Conv2d`, escrevo uma convolução com laços em NumPy, aplico um filtro de borda numa foto e confiro se a saída faz sentido. Antes de confiar no IoU que a biblioteca devolve, calculo o meu e comparo.
+
+O código que sai disso é lento e eu nunca usaria em produção. Ele serve para outra coisa: me mostrar exatamente em que ponto eu achava que entendia e não entendia. Quase sempre tropeço num detalhe que o texto tratava como óbvio, como o tamanho da saída quando a borda não é preenchida ou a ordem dos canais na imagem.
+
+Só depois disso troco a minha versão pela da biblioteca, e aí uso a biblioteca sabendo o que ela está fazendo por baixo.
+
+## Transformo o conceito em algo que dá para ver
+
+Muita coisa em machine learning só fez sentido para mim quando vi se mexendo. Um gradiente descendo uma superfície, uma rede neural separando duas classes, a janela da convolução passando pela imagem.
+
+Por isso uso o Manim para animar conceitos e mantenho o [Laboratório](/laboratorio) aqui no site, com experimentos interativos de convolução, PCA, gradiente, IoU e rede neural. Montar uma visualização me obriga a decidir cada detalhe: o que acontece quando o passo de aprendizado é grande demais, o que muda quando o filtro é outro. Se a animação sai errada, quase sempre é porque meu entendimento estava errado antes dela.
+
+## Testo no hardware que eu tenho
+
+Os números dos artigos e dos livros são medidos em máquinas que eu não tenho. Meu notebook tem uma RTX 3050 com 4 GB de VRAM, e é nela que rodo tudo.
+
+Isso acabou virando parte do estudo. Quando um modelo não cabe na memória, aprendo sobre tamanho de lote e precisão reduzida porque preciso, não porque estava no capítulo seguinte. Quando a latência que meço não bate com a do artigo, vou atrás do motivo e descubro diferenças de protocolo que eu nunca teria notado lendo.
+
+## Só considero que aprendi quando consigo escrever
+
+O blog é a última etapa e a que mais me cobra. Uma coisa é entender um assunto o suficiente para fazer o código rodar. Outra é explicar para um leitor que não estava comigo enquanto eu tropeçava.
+
+Na hora de escrever, aparecem os buracos que a leitura e o código não mostraram: um termo que eu usava sem saber definir, uma afirmação que eu repetia sem ter testado. Desde que montei um fluxo de checagem para os posts (contei como em [outro artigo](/blog/agentes_e_skills_na_pratica)), cada número e referência passa por uma conferência separada antes de publicar, o que me obriga a voltar às fontes mais uma vez.
+
+Uso agentes de IA nesse processo, mas com um cuidado. Peço para eles me fazerem perguntas sobre o que escrevi, apontarem onde a explicação ficou confusa ou checarem uma afirmação contra a fonte. Não peço para resumirem capítulos no meu lugar, porque o resumo pronto pula justamente a parte em que eu aprenderia.
+
+## O que eu parei de fazer
+
+Algumas coisas saíram da rotina porque não funcionavam para mim. Ler livro técnico de capa a capa sem um projeto do lado é a principal. Colecionar PDFs e cursos "para ver depois" também: a pasta crescia e eu não abria quase nada. E abandonei a ideia de que preciso dominar toda a teoria antes de escrever a primeira linha de código. Na maioria das vezes, é o código quebrado que me mostra qual teoria preciso ler.
+
+Esse processo também tem limites. Ele é lento para assuntos que exigem uma base longa antes de qualquer projeto fazer sentido, e às vezes me leva a aprender um tema em pedaços, na ordem em que os problemas aparecem, e não na ordem mais lógica. Quando percebo que estou com muitos pedaços soltos, volto para um dos livros e leio um capítulo inteiro, do começo ao fim, para costurar tudo.
