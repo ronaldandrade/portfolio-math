@@ -140,6 +140,8 @@ export default function ConvolutionLab() {
   const inRef = useRef<HTMLCanvasElement>(null);
   const outRef = useRef<HTMLCanvasElement>(null);
   const calcRef = useRef<HTMLCanvasElement>(null);
+  const inCacheRef = useRef<HTMLCanvasElement | null>(null);
+  const outCacheRef = useRef<{ key: string; cv: HTMLCanvasElement } | null>(null);
 
   const [preset, setPreset] = useState<Preset | "custom">("sobelx");
   const [kernel, setKernel] = useState<number[]>(PRESETS.sobelx.k);
@@ -176,19 +178,62 @@ export default function ConvolutionLab() {
 
     const img = imagemCinza();
 
-    /** Desenha os três painéis com a janela em (x, y) e a saída preenchida até `ate`. */
-    const desenhar = (x: number, y: number, ate: number) => {
+    // Cache da entrada (N×N): renderizado uma única vez
+    let inCache = inCacheRef.current;
+    if (!inCache) {
+      inCache = document.createElement("canvas");
+      inCache.width = inCache.height = N;
+      const cctx = inCache.getContext("2d")!;
+      const idata = cctx.createImageData(N, N);
       for (let i = 0; i < N * N; i++) {
         const g = img[i];
-        ictx.fillStyle = `rgb(${g},${g},${g})`;
-        ictx.fillRect((i % N) * CELL, Math.floor(i / N) * CELL, CELL + 0.5, CELL + 0.5);
+        idata.data[i * 4] = g;
+        idata.data[i * 4 + 1] = g;
+        idata.data[i * 4 + 2] = g;
+        idata.data[i * 4 + 3] = 255;
       }
+      cctx.putImageData(idata, 0, 0);
+      inCacheRef.current = inCache;
+    }
+
+    // Cache da saída (N×N): recalculado somente quando o kernel muda
+    const kKey = kernel.join(",");
+    let outCache = outCacheRef.current?.key === kKey ? outCacheRef.current.cv : null;
+    if (!outCache) {
+      outCache = document.createElement("canvas");
+      outCache.width = outCache.height = N;
+      const cctx = outCache.getContext("2d")!;
+      const idata = cctx.createImageData(N, N);
+      for (let i = 0; i < N * N; i++) {
+        const g = Math.round(exibir(aplicar(img, kernel, i % N, Math.floor(i / N)), kernel));
+        idata.data[i * 4] = g;
+        idata.data[i * 4 + 1] = g;
+        idata.data[i * 4 + 2] = g;
+        idata.data[i * 4 + 3] = 255;
+      }
+      cctx.putImageData(idata, 0, 0);
+      outCacheRef.current = { key: kKey, cv: outCache };
+    }
+
+    /** Desenha os três painéis com a janela em (x, y) e a saída preenchida até `ate`. */
+    const desenhar = (x: number, y: number, ate: number) => {
+      ictx.imageSmoothingEnabled = false;
+      ictx.drawImage(inCache, 0, 0, VIEW, VIEW);
+
       octx.fillStyle = palette.card;
       octx.fillRect(0, 0, VIEW, VIEW);
-      for (let i = 0; i < ate; i++) {
-        const g = Math.round(exibir(aplicar(img, kernel, i % N, Math.floor(i / N)), kernel));
-        octx.fillStyle = `rgb(${g},${g},${g})`;
-        octx.fillRect((i % N) * CELL, Math.floor(i / N) * CELL, CELL + 0.5, CELL + 0.5);
+      octx.imageSmoothingEnabled = false;
+      if (ate >= N * N) {
+        octx.drawImage(outCache, 0, 0, VIEW, VIEW);
+      } else if (ate > 0) {
+        const fullRows = Math.floor(ate / N);
+        const remCols = ate % N;
+        if (fullRows > 0) {
+          octx.drawImage(outCache, 0, 0, N, fullRows, 0, 0, VIEW, fullRows * CELL);
+        }
+        if (remCols > 0) {
+          octx.drawImage(outCache, 0, fullRows, remCols, 1, 0, fullRows * CELL, remCols * CELL, CELL);
+        }
       }
       // Janela 3×3 na entrada e pixel correspondente na saída
       for (const [ctx, x0, y0, lado] of [

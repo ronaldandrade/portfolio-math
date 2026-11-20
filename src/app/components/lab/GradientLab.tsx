@@ -139,6 +139,7 @@ export default function GradientLab() {
   const mapRef = useRef<HTMLCanvasElement>(null);
   const lossRef = useRef<HTMLCanvasElement>(null);
   const readoutRef = useRef<HTMLParagraphElement>(null);
+  const mapaCacheRef = useRef<{ key: string; cv: HTMLCanvasElement } | null>(null);
 
   const [fnId, setFnId] = useState<FuncaoId>("vale");
   const [opt, setOpt] = useState<Otimizador>("gd");
@@ -173,7 +174,12 @@ export default function GradientLab() {
     const f = FUNCOES[fnId];
     const taxa = 10 ** logLr;
     const [x0, x1, y0, y1] = f.dom;
-    const mapa = renderMapa(f, palette);
+    const mapKey = `${fnId}:${palette.bg}:${palette.primary}:${palette.muted}`;
+    let mapa = mapaCacheRef.current?.key === mapKey ? mapaCacheRef.current.cv : null;
+    if (!mapa) {
+      mapa = renderMapa(f, palette);
+      mapaCacheRef.current = { key: mapKey, cv: mapa };
+    }
     const toPx = (x: number, y: number): [number, number] => [
       ((x - x0) / (x1 - x0)) * VIEW,
       ((y1 - y) / (y1 - y0)) * VIEW,

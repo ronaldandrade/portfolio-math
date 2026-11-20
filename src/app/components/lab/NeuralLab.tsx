@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Controles,
   Formula,
@@ -191,6 +191,7 @@ export default function NeuralLab() {
   const [rodando, setRodando] = useState(true);
   const [rodada, setRodada] = useState(0);
 
+  const dados = useMemo(() => gerarDados(dataset), [dataset]);
   const lr = 10 ** logLr;
   const nParams = (() => {
     const sizes = [2, ...Array<number>(camadas).fill(neuronios), 1];
@@ -215,7 +216,6 @@ export default function NeuralLab() {
     const lctx = closs.getContext("2d");
     if (!ctx || !nctx || !lctx) return;
 
-    const dados = gerarDados(dataset);
     const taxa = 10 ** logLr;
     const acts = rede.sizes.map((n) => new Float64Array(n));
     const heat = document.createElement("canvas");
@@ -317,13 +317,15 @@ export default function NeuralLab() {
       lctx.fillRect(0, 0, LW, LH);
       const perdas = rede.perdas;
       const maxX = Math.max(100, Math.ceil(perdas.length / 100) * 100);
-      const maxY = 0.8;
+      const pico = perdas.reduce((acc, v) => (v > acc ? v : acc), 0.8);
+      const maxY = Math.ceil(pico * 5) / 5;
       const xs = (i: number) => m.l + (i / maxX) * (LW - m.l - m.r);
       const ys = (v: number) => m.t + (1 - Math.min(v, maxY) / maxY) * (LH - m.t - m.b);
       lctx.font = "500 17px ui-monospace, monospace";
       lctx.textAlign = "right";
       lctx.textBaseline = "middle";
-      for (const v of [0, 0.2, 0.4, 0.6, 0.8]) {
+      for (let k = 0; k <= 4; k++) {
+        const v = (maxY * k) / 4;
         lctx.strokeStyle = palette.grid;
         lctx.lineWidth = 1;
         lctx.beginPath();
@@ -379,7 +381,7 @@ export default function NeuralLab() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [palette, visible, dataset, camadas, neuronios, ativ, logLr, rodando, rodada]);
+  }, [palette, visible, dados, camadas, neuronios, ativ, logLr, rodando, rodada]);
 
   return (
     <div ref={rootRef}>

@@ -57,9 +57,12 @@ export default function CameraLab() {
   const matrixRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const objectUrlRef = useRef<string | null>(null);
+  const lastMsRef = useRef(600);
 
   const [fonte, setFonte] = useState<Fonte>("cena");
   const [imagem, setImagem] = useState<HTMLImageElement | null>(null);
+  const [pausado, setPausado] = useState(false);
   const [resIdx, setResIdx] = useState(4);
   const [bits, setBits] = useState(8);
   const [modo, setModo] = useState<Modo>("rgb");
@@ -76,11 +79,20 @@ export default function CameraLab() {
     streamRef.current = null;
   };
 
-  useEffect(() => pararWebcam, []);
+  useEffect(() => {
+    return () => {
+      pararWebcam();
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+    };
+  }, []);
 
   const usarCena = () => {
     pararWebcam();
     setErro("");
+    setPausado(false);
     setFonte("cena");
   };
 
@@ -98,6 +110,7 @@ export default function CameraLab() {
         video.srcObject = stream;
         await video.play();
       }
+      setPausado(false);
       setFonte("webcam");
     } catch {
       setErro("Não foi possível abrir a câmera. Libere a permissão no navegador e tente de novo.");
@@ -107,15 +120,22 @@ export default function CameraLab() {
   const usarArquivo = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = url;
       pararWebcam();
       setErro("");
+      setPausado(false);
       setImagem(img);
       setFonte("upload");
     };
-    img.onerror = () => setErro("Esse arquivo não abriu como imagem. Tente um JPG ou PNG.");
-    img.src = URL.createObjectURL(file);
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      setErro("Esse arquivo não abriu como imagem. Tente um JPG ou PNG.");
+    };
+    img.src = url;
     e.target.value = "";
   };
 
@@ -148,15 +168,18 @@ export default function CameraLab() {
       sctx.drawImage(src, (sw - side) / 2, (sh - side) / 2, side, side, 0, 0, SCENE, SCENE);
     };
 
-    const frame = (ms: number) => {
+    const frame = (ms: number, atualizarCena = true) => {
       // 1. Cena
-      const video = videoRef.current;
-      if (fonte === "webcam" && video && video.videoWidth > 0) {
-        drawCover(video, video.videoWidth, video.videoHeight);
-      } else if (fonte === "upload" && imagem) {
-        drawCover(imagem, imagem.naturalWidth, imagem.naturalHeight);
-      } else {
-        drawScene(sctx, SCENE, ms / 1000);
+      if (atualizarCena) {
+        lastMsRef.current = ms;
+        const video = videoRef.current;
+        if (fonte === "webcam" && video && video.videoWidth > 0) {
+          drawCover(video, video.videoWidth, video.videoHeight);
+        } else if (fonte === "upload" && imagem) {
+          drawCover(imagem, imagem.naturalWidth, imagem.naturalHeight);
+        } else {
+          drawScene(sctx, SCENE, ms / 1000);
+        }
       }
 
       // 2. Amostragem (N×N) e quantização (b bits)
@@ -267,19 +290,22 @@ export default function CameraLab() {
       mctx.stroke();
     };
 
-    const animar = visible && (fonte === "webcam" || (fonte === "cena" && !prefersReducedMotion()));
+    const animar =
+      !pausado && visible && (fonte === "webcam" || (fonte === "cena" && !prefersReducedMotion()));
     if (!animar) {
-      frame(600);
+      // Se pausado na webcam, mantém o frame já capturado no canvas da cena
+      const manterFrame = pausado && fonte === "webcam";
+      frame(lastMsRef.current, !manterFrame);
       return;
     }
     let raf = 0;
     const loop = (ms: number) => {
-      frame(ms);
+      frame(ms, true);
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [palette, visible, fonte, imagem, n, bits, modo, sel]);
+  }, [palette, visible, fonte, imagem, pausado, n, bits, modo, sel]);
 
   return (
     <div ref={rootRef}>
@@ -303,6 +329,11 @@ export default function CameraLab() {
               Enviar imagem
               <input type="file" accept="image/*" onChange={usarArquivo} className="sr-only" />
             </label>
+            {fonte !== "upload" && (
+              <LabButton onClick={() => setPausado((p) => !p)}>
+                {pausado ? "Retomar" : "Congelar frame"}
+              </LabButton>
+            )}
           </div>
         </div>
         <Slider
