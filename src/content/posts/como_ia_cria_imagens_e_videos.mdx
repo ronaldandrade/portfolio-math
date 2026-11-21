@@ -1,0 +1,223 @@
+---
+title: "Como a IA realmente cria imagens e vídeos: do ruído ao Flow Matching e patches 3D"
+date: "2026-11-20"
+description: "Uma dissecação matemática e prática de como funcionam os modelos modernos de síntese visual: por que saímos de GANs para difusão, o que o Flow Matching do Flux e do SD3 realmente muda, e como Wan2.1 e HunyuanVideo usam 3D Causal VAEs para vídeo."
+tags: ["Visão Computacional", "Deep Learning", "Difusão", "Flow Matching", "Vídeo Generativo"]
+author: "Ronald Andrade"
+cover: "/imagens/flux_flow_matching_mmdit.jpg"
+readingTime: "15 min"
+difficulty: "intermediate"
+---
+
+Quando você digita uma frase em um gerador de imagens ou assiste a um vídeo sintético de alta definição, a explicação popular quase sempre para na superfície: dizem que o modelo viu milhões de fotos e aprendeu a combinar padrões. Só que quem já tentou treinar uma rede neural convolucional para prever pixels sabe que redes odeiam indefinição. Se você treinar uma arquitetura simples com erro quadrático médio para adivinhar a próxima imagem, o resultado é um borrão cinzento, porque a média de todas as fotos possíveis de uma rua é uma massa uniforme sem contraste.
+
+Para sair dessa armadilha, a pesquisa em visão computacional passou a última década testando paradigmas matemáticos diferentes. Vimos as redes adversárias (GANs), os autoencoders variacionais discretos (VQ-GAN), a difusão clássica (DDPM e Stable Diffusion) e, mais recentemente, o **Flow Matching** e os **Diffusion Transformers** espaço-temporais (DiTs).
+
+Neste post, desmonto como essas arquiteturas funcionam por dentro, qual a matemática que permite transformar ruído puro em vídeo coerente e por que modelos de vídeo ainda sofrem para entender a física básica do mundo real.
+
+## 1. Por que não geramos pixels diretamente?
+
+Uma imagem colorida padrão de $512 \times 512$ pixels é representada como um tensor tridimensional com formato $(3, 512, 512)$, totalizando 786.432 números reais.
+
+Guardar esses números não é o problema: são cerca de 3 MB por imagem. O problema é o custo de computação. Um modelo de difusão roda a rede inteira dezenas de vezes por amostra, e cada passagem processa todos os pixels em alta resolução. Os modelos de difusão em pixels funcionam (o DDPM original de 2020 já gerava imagens de $256 \times 256$ do LSUN e do CelebA-HQ, e o ADM chegou a $512 \times 512$), mas o custo de treino e inferência cresce rápido com a resolução.
+
+A virada de chave prática aconteceu com os **Latent Diffusion Models** (LDM), a fundação do Stable Diffusion clássico. A ideia central foi separar o trabalho em duas etapas:
+
+1. Um **Autoencoder Variacional** (VAE) pré-treinado aprende a comprimir a imagem do espaço de pixels para um espaço latente compacto com fator de redução espacial $f = 8$. A imagem de $(3, 512, 512)$ é reduzida para um tensor latente $z$ de dimensão $(4, 64, 64)$.
+2. A geração pesada (a difusão) acontece inteiramente dentro de $z$, que possui apenas 16.384 números, ou seja, um volume de dados 48 vezes menor do que a imagem bruta.
+
+Somente no último instante, quando o tensor latente já está limpo, o decoder do VAE pega esses números compactados e reconstrói os pixels em alta definição.
+
+## 2. A mecânica da Difusão Clássica: destruição e reconstrução
+
+Na difusão clássica (DDPM), o processo de geração se apoia em duas metades:
+
+### O processo direto (adicionar ruído)
+Pegamos uma imagem limpa $x_0$ e adicionamos ruído gaussiano aos poucos ao longo de $T$ passos de tempo (geralmente $T = 1000$). Graças à propriedade reprodutiva da distribuição normal, não precisamos somar ruído passo a passo; podemos calcular o estado ruidoso $x_t$ em qualquer instante $t$ diretamente:
+
+$$
+x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \epsilon, \qquad \epsilon \sim \mathcal{N}(0, \mathbf{I})
+$$
+
+Aqui, $\epsilon$ é um ruído gaussiano puro amostrado de uma distribuição normal padrão, e $\bar{\alpha}_t$ é um coeficiente escalar pré-calculado que decresce de 1 até quase 0 conforme $t$ vai de 0 a $T$. Quando $t = T$, a imagem original $x_0$ desaparece completamente e sobra apenas ruído estático.
+
+### O processo reverso (limpar o ruído)
+O objetivo do treinamento é simples: pegamos uma imagem limpa $x_0$, sorteamos um tempo $t$ e um ruído $\epsilon$, calculamos $x_t$, e pedimos para uma rede neural prever qual foi o $\epsilon$ adicionado:
+
+$$
+\mathcal{L}_{\text{simple}} = \mathbb{E}_{t, x_0, \epsilon} \left[ \| \epsilon - \epsilon_\theta(x_t, t) \|^2 \right]
+$$
+
+O termo $\epsilon_\theta(x_t, t)$ representa a saída da rede paramétrica $\theta$. Se a rede souber exatamente qual ruído está contaminando a imagem naquele momento, podemos subtrair uma fração desse ruído e dar um passo em direção à imagem limpa:
+
+$$
+x_{t-1} = \frac{1}{\sqrt{\alpha_t}} \left( x_t - \frac{1 - \alpha_t}{\sqrt{1 - \bar{\alpha}_t}} \epsilon_\theta(x_t, t) \right) + \sigma_t z
+$$
+
+No DDPM original, a amostragem percorre os 1000 passos. Amostradores posteriores, como o DDIM (determinístico, uma ODE) e o DPM-Solver, reduziram isso para algo entre 20 e 50 passos sem retreinar a rede. Ainda assim, o caminho entre o ruído e a imagem é curvo, e cada passo extra custa uma passagem completa pela rede.
+
+## 3. O salto moderno: Flow Matching e trajetórias retas
+
+Em 2024, modelos líderes como o **Stable Diffusion 3** (março) e o **Flux.1** (agosto, da Black Forest Labs, fundada por autores do LDM original) abandonaram a formulação de DDPM e adotaram o **Flow Matching** (especificamente o *Rectified Flow*).
+
+Em vez de simular um processo de difusão, o Rectified Flow define, para cada par (ruído $x_1$, dado $x_0$), a rota mais simples possível: uma linha reta.
+
+A interpolação entre o dado e o ruído no instante $t \in [0, 1]$ é linear:
+
+$$
+x_t = (1 - t) x_0 + t x_1
+$$
+
+Se derivarmos essa posição $x_t$ em relação ao tempo $t$, encontramos a velocidade constante do ponto:
+
+$$
+\frac{d x_t}{dt} = x_1 - x_0
+$$
+
+A rede neural não tenta mais prever ruído. Ela é treinada para prever esse campo vetorial de velocidade $v_\theta(x_t, t)$:
+
+$$
+\mathcal{L}_{\text{FM}} = \mathbb{E}_{t, x_0, x_1} \left[ \| v_\theta(x_t, t) - (x_1 - x_0) \|^2 \right]
+$$
+
+Na inferência, um integrador de Euler percorre a ODE do ruído até o dado:
+
+$$
+x_{t - \Delta t} = x_t - v_\theta(x_t, t) \cdot \Delta t
+$$
+
+### O detalhe que costuma ficar de fora
+A linha reta vale para cada par isolado. Mas um mesmo ponto $x_t$ pode estar no caminho de muitos pares diferentes, e a rede aprende a **média** dessas velocidades. O campo resultante (o campo *marginal*) é curvo sempre que a distribuição tem vários modos. É por isso que a perda do Flow Matching nunca chega a zero, e é por isso que o Rectified Flow original propõe o *reflow*: gerar pares (ruído, imagem) com o próprio modelo e retreinar sobre eles, o que endireita as trajetórias.
+
+Testei isso em um script em Python com um MLP pequeno, numa distribuição de 8 gaussianas em anel. Treinei três modelos: DDPM (amostrado com DDIM), Rectified Flow e Rectified Flow com uma rodada de reflow. Medi a retidão da trajetória (comprimento do caminho dividido pela distância entre início e fim; uma reta vale 1,0) e a precisão (fração de amostras perto de algum centro):
+
+| Modelo | Retidão | 1 passo | 5 passos | 10 passos | 50 passos |
+|---|---|---|---|---|---|
+| DDPM + DDIM | 1,63 | 0,01 | 0,47 | 0,73 | 0,85 |
+| Rectified Flow | 1,74 | 0,00 | 0,74 | 0,89 | 0,95 |
+| Rectified Flow + reflow | 1,00 | 0,78 | 0,88 | 0,91 | 0,93 |
+
+Três leituras:
+
+1. Sem reflow, as trajetórias do Flow Matching **não são mais retas** que as do DDIM neste experimento.
+2. Mesmo assim, ele chega a uma qualidade melhor com menos passos: com 10 passos de Euler, supera o DDIM com 50.
+3. O reflow deixa a trajetória praticamente reta e permite gerar em 1 ou 2 passos, com uma pequena perda de qualidade no limite.
+
+Nos modelos de produção, os poucos passos extremos (o Flux.1 Schnell em 1 a 4 passos) vêm de destilação, não do Flow Matching sozinho. Os modelos não destilados, como o SD3 e o Flux.1 Dev, rodam tipicamente com 28 a 50 passos.
+
+## 4. Saindo das Convoluções: DiT e MMDiT
+
+Durante anos, a espinha dorsal da difusão foi a **U-Net**, uma rede cheia de convoluções que processava características em múltiplas resoluções. A U-Net funciona muito bem para manter coerência espacial local, mas as maiores ficaram na casa de 2 a 3 bilhões de parâmetros (a do SDXL tem 2,6B), e escalar além disso não seguia uma regra previsível.
+
+Peebles e Xie propuseram o **Diffusion Transformer (DiT)** no fim de 2022 (publicado no ICCV 2023): eliminar a U-Net e tratar o tensor latente como uma sequência de blocos planos (patches), exatamente como o Vision Transformer (ViT) faz em classificação. Com isso, a qualidade passou a melhorar de forma previsível com mais computação.
+
+Nos modelos de ponta atuais, essa ideia foi refinada no **MMDiT** (Multi-Modal DiT), introduzido no SD3:
+
+1. O prompt de texto é processado por encoders grandes (o encoder do T5-XXL, com cerca de 4,7 bilhões de parâmetros, combinado com o CLIP).
+2. Em vez de injetar o texto por cross-attention em uma rede puramente visual, tokens de texto e tokens de imagem têm **pesos separados** em cada bloco e se encontram numa **atenção conjunta**: as duas sequências são concatenadas só na operação de atenção.
+3. Isso evita que uma modalidade esmague a outra: o texto mantém sua estrutura e os recursos visuais não são achatados precocemente.
+
+O Flux.1 usa uma variação: 19 blocos com fluxos duplos (como no MMDiT) seguidos de 38 blocos de fluxo único, em que texto e imagem passam a compartilhar os mesmos pesos.
+
+É essa capacidade do T5 de ler prompts densos somada à flexibilidade do MMDiT que permite ao Flux renderizar palavras legíveis em cartazes e rótulos, algo que o Stable Diffusion 1.5 errava quase sempre.
+
+![Ilustração conceitual da geração de imagens por Flow Matching e MMDiT em modelos como Flux.1 e Stable Diffusion 3: da esquerda para a direita, ruído gaussiano puro se organiza ao longo de vetores retos e paralelos em ciano e âmbar até formar uma cena noturna chuvosa fotorrealista de uma cafeteria de esquina com o letreiro em neon "FLUX" perfeitamente legível na vitrine.](/imagens/flux_flow_matching_mmdit.jpg)
+
+## 5. De Imagem para Vídeo: A Quarta Dimensão e a Explosão de Dados
+
+Se gerar uma imagem já exige compactação latente, gerar vídeo é ordens de grandeza mais desafiador. Um vídeo adiciona a dimensão temporal $T$:
+
+$$
+V \in \mathbb{R}^{T \times H \times W \times C}
+$$
+
+Um clipe de cerca de 5 segundos a 24 quadros por segundo em 720p tem 121 imagens de $1280 \times 720$ pixels (o motivo do 121, e não 120, aparece mais abaixo). Isso soma cerca de 335 milhões de valores, ou uns 640 MB em precisão de 16 bits para um único vídeo.
+
+Se dividirmos esse vídeo bruto em patches convencionais de $1 \times 16 \times 16$, obtemos 435.600 tokens de sequência. Como a autoatenção padrão em Transformers compara cada token com todos os outros:
+
+$$
+N^2 = (435.600)^2 \approx 1,9 \times 10^{11} \text{ entradas na matriz de atenção}
+$$
+
+E isso por camada, antes de multiplicar pela dimensão dos vetores. Inviável.
+
+### A solução da indústria: 3D Causal VAE e Spacetime Patches
+Modelos abertos como o **Wan2.1** (da Alibaba), o **HunyuanVideo** (da Tencent) e o **CogVideoX** (da Zhipu AI) resolveram essa equação com dois pilares. O **Sora** (da OpenAI) popularizou a ideia de patches espaço-temporais, mas não publicou os detalhes da arquitetura.
+
+#### 1. 3D Causal VAE
+Em vez de usar um VAE que comprime apenas altura e largura, eles usam um autoencoder convolucional tridimensional. O Wan-VAE (do Wan2.1), por exemplo, comprime o tempo por um fator de 4 e o espaço por 8, com 16 canais latentes:
+- O primeiro quadro é codificado sozinho, e os outros 120 em grupos de 4: os 121 quadros viram $1 + 120/4 = 31$ estados latentes. Por isso esses modelos pedem $4n + 1$ quadros.
+- A resolução de $720 \times 1280$ é compactada para $90 \times 160$.
+
+O termo **causal** significa que as convoluções no tempo só enxergam frames do passado e do presente, nunca do futuro. A consequência prática mais importante é que o primeiro quadro é codificado como uma imagem comum, de modo que imagens e vídeos dividem o mesmo espaço latente. Isso permite treinar com imagens e vídeos juntos, gerar vídeo a partir de uma imagem e codificar vídeos longos em pedaços.
+
+#### 2. Spacetime Patches
+O tensor latente $(31 \times 90 \times 160)$ é fatiado em patches. Wan2.1 e HunyuanVideo usam patches de $1 \times 2 \times 2$: dois por dois no espaço, sem agrupar no tempo. Cada patch vira um token para o Transformer.
+
+O número de tokens cai de 435.600 para 111.600: uma sequência **3,9 vezes menor** e uma matriz de atenção **15 vezes menor**. Alguns modelos agrupam também no tempo (o CogVideoX 1.5 usa patch temporal 2); com $2 \times 2 \times 2$, seriam 57.600 tokens, cerca de 57 vezes menos atenção. Mesmo com o VAE 3D, dezenas de milhares de tokens continuam sendo o principal custo, e é por isso que boa parte da pesquisa recente em vídeo é sobre atenção esparsa e eficiente.
+
+![Visualização tridimensional do pipeline de vídeo com 3D Causal VAE e Spacetime Patches usado por modelos como Wan2.1, HunyuanVideo, CogVideoX e Sora: cinco quadros translúcidos de uma onda oceânica em sequência são comprimidos em um cubo latente 3D subdividido em pequenos blocos volumétricos translúcidos (voxels em ciano, azul e âmbar) que se destacam em fila formando a sequência de tokens para o Transformer.](/imagens/spacetime_patches_video_3d.jpg)
+
+## 6. Modelo ou produto? Os casos do Seedance e do Nano Banana
+
+Nas redes sociais e comunidades de criadores, nomes como **Seedance** e **Nano Banana** aparecem com frequência associados a imagens e vídeos hiper-realistas. Os dois são modelos fundacionais de grandes laboratórios, e vale entender o que cada um trouxe.
+
+### ByteDance Seedance: vídeo e áudio gerados juntos
+A família Seedance vem do time Seed da ByteDance (a empresa por trás do TikTok e do ecossistema Doubao/Jimeng):
+
+- **Seedance 1.0** (junho de 2025): só vídeo, sem áudio.
+- **Seedance 1.5 pro** (dezembro de 2025): geração conjunta de áudio e vídeo. O relatório técnico descreve um **DiT de duas ramificações** (*dual-branch*): uma processa os latentes do vídeo, outra os do áudio, e um módulo conjunto liga as duas. Como as ramificações trocam informação durante a amostragem, o modelo aprende a sincronizar lábios com fonemas e sons com impactos visuais.
+- **Seedance 2.0** (fevereiro de 2026): arquitetura unificada de geração conjunta áudio-vídeo que aceita texto, imagem, áudio e vídeo como referência, gerando clipes de 4 a 15 segundos. Com vídeos de referência, dá para transferir movimento de câmera ou coreografia para um novo personagem.
+- **Seedance 2.5** (julho de 2026): clipes de 30 segundos numa única passada e até 50 referências multimodais.
+
+O Seedance não está sozinho no áudio nativo: Veo 3 (Google, maio de 2025), Sora 2 (OpenAI, setembro de 2025), Wan 2.5 e Kling 2.6 também geram som junto com a imagem. Em 2026, vídeo mudo virou exceção entre os modelos de ponta.
+
+![Ilustração conceitual da geração conjunta de áudio e vídeo e da transferência por referência no ByteDance Seedance: à esquerda, uma silhueta wireframe ciano de uma bailarina em salto transfere sua trajetória de movimento para uma bailarina fotorrealista ao centro, envolvida simultaneamente por uma fita translúcida de quadros de vídeo e por uma forma de onda sonora dourada sincronizada com ondas concêntricas no chão.](/imagens/seedance_dual_branch_audiovisual.jpg)
+
+### Nano Banana: o modelo de imagem do Gemini
+Nano Banana é o apelido do modelo de imagem do Google, que viralizou com esse codinome antes de ser anunciado como **Gemini 2.5 Flash Image** (agosto de 2025). Vieram depois o **Nano Banana Pro** (novembro de 2025) e o **Nano Banana 2** (Gemini 3.1 Flash Image, fevereiro de 2026), hoje o padrão no app do Gemini.
+
+A diferença em relação a um Flux ou SD3 é que a geração de imagem é uma capacidade nativa de um modelo multimodal: o mesmo modelo que entende texto e imagens também edita e gera. Isso explica a força em edição por conversa ("troque o fundo", "mantenha o rosto") e em consistência de personagem entre várias imagens. O Google não publicou os detalhes da arquitetura. As imagens saem com marca d'água **SynthID**, invisível a olho nu.
+
+### Onde está a engenharia de produto
+A camada de produto existe, mas fica em volta desses modelos. Vários sites de terceiros usam "banana" no nome e repassam pedidos para APIs como o Nano Banana, o Veo ou o Seedance. Fluxos de trabalho em ferramentas como o ComfyUI encadeiam encoders de identidade facial (IP-Adapter), máscaras de segmentação para inpainting e controle de primeiro e último quadro (*first & last frame*). Separar quem treina o backbone de quem constrói a esteira em volta ajuda a enxergar onde está a inovação matemática e onde está a engenharia de software.
+
+![Tríptico editorial ilustrando consistência de personagem entre múltiplas cenas (como no Nano Banana) e pipelines de controle de identidade: três quadros cinematográficos ligados por curvas douradas e uma linha do tempo inferior mantêm exatamente a mesma personagem de jaqueta amarelo-dourada em ambientes distintos, com o quadro central destacando uma malha geométrica de pontos faciais e contorno luminoso de máscara de segmentação entre o primeiro e o último quadro.](/imagens/nano_banana_orquestracao_multimodal.jpg)
+
+## 7. Por que os modelos de vídeo ainda erram a física?
+
+Apesar do realismo visual atingido por Veo, Sora 2, Kling e Seedance, qualquer usuário atento nota falhas recorrentes: dedos que se fundem ao segurar uma xícara, pessoas que se viram de costas e perdem acessórios, ou líquidos que escorrem sem gravidade uniforme.
+
+A razão técnica para isso é direta: **esses modelos não são motores de física e não constroem malhas tridimensionais**.
+
+Eles operam como aproximadores estatísticos de densidade de probabilidade no espaço latente. O modelo aprende que, no dataset de treino, quando há um movimento de câmera para a direita, certos padrões de texturas se deslocam para a esquerda. No entanto, ele não mantém uma representação explícita de volume, inércia ou massa.
+
+Quando o modelo precisa interpolar posições em que oclusões complexas acontecem, a perda de treino o empurra para a solução estatisticamente mais provável dentro da distribuição. Em casos ambíguos, a rede minimiza o erro criando transições plásticas contínuas, gerando membros extras ou teletransportando objetos.
+
+## 8. O que fica desse panorama
+
+Entender a evolução desses modelos mostra que o salto de qualidade recente não foi mágica nem apenas aumento indiscriminado de dados de treino:
+
+1. A **compressão latente (VAE 2D e 3D)** foi o que viabilizou rodar modelos generativos fora de supercomputadores de pesquisa.
+2. O **Flow Matching** trocou a previsão de ruído por um alvo de velocidade mais simples; na prática, chega a boa qualidade com menos passos, e as trajetórias quase retas de verdade vêm de reflow e destilação.
+3. O abandono da U-Net convolucional em favor do **DiT / MMDiT** permitiu aplicar as leis de escala dos Transformers à visão computacional, destravando a compreensão de textos densos e composições complexas.
+4. O vídeo exige **atenção espaço-temporal estruturada**; quem domina o 3D Causal VAE e o custo da atenção domina o tempo de computação.
+
+Todo o código com os experimentos do Flow Matching em 2D e o cálculo de atenção dos patches 3D está documentado e reproduzível no [repositório do projeto](https://github.com/ronaldandrade/modelos-geracao-imagem-video).
+
+## Referências
+
+1. **DDPM (Denoising Diffusion Probabilistic Models):** Ho, J., Jain, A., & Abbeel, P. (2020). *Denoising Diffusion Probabilistic Models*. Advances in Neural Information Processing Systems (NeurIPS 2020). [arXiv:2006.11239](https://arxiv.org/abs/2006.11239).
+2. **Latent Diffusion (Stable Diffusion):** Rombach, R., Blattmann, A., Lorenz, D., Esser, P., & Ommer, B. (2022). *High-Resolution Image Synthesis with Latent Diffusion Models*. IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2022). [arXiv:2112.10752](https://arxiv.org/abs/2112.10752).
+3. **Flow Matching:** Lipman, Y., Chen, R. T. Q., Ben-Hamu, H., Nicklas, M., & Le, M. (2022). *Flow Matching for Generative Modeling*. International Conference on Learning Representations (ICLR 2023). [arXiv:2210.02747](https://arxiv.org/abs/2210.02747).
+4. **Rectified Flow:** Liu, X., Gong, C., & Liu, Q. (2022). *Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow*. International Conference on Learning Representations (ICLR 2023). [arXiv:2209.03003](https://arxiv.org/abs/2209.03003).
+5. **Diffusion Transformers (DiT):** Peebles, W., & Xie, S. (2023). *Scalable Diffusion Models with Transformers*. IEEE/CVF International Conference on Computer Vision (ICCV 2023). [arXiv:2212.09748](https://arxiv.org/abs/2212.09748).
+6. **Scaling Rectified Flow Transformers (SD3 / MMDiT):** Esser, P., Kulal, S., Blattmann, A., et al. (2024). *Scaling Rectified Flow Transformers for High-Resolution Image Synthesis*. International Conference on Machine Learning (ICML 2024). [arXiv:2403.03206](https://arxiv.org/abs/2403.03206).
+7. **Wan2.1 (3D Causal VAE & Video DiT):** Wan Team, Alibaba Group (2025). *Wan: Open and Advanced Large-Scale Video Generative Models*. [arXiv:2503.20314](https://arxiv.org/abs/2503.20314).
+8. **HunyuanVideo:** Tencent Hunyuan Team (2024). *HunyuanVideo: A Systematic Framework for Large Video Generation Models*. [arXiv:2412.03603](https://arxiv.org/abs/2412.03603).
+9. **VBench (Avaliação de Vídeo):** Huang, Z., He, Y., Yu, J., et al. (2024). *VBench: Comprehensive Benchmark Suite for Video Generative Models*. IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2024). [arXiv:2311.17982](https://arxiv.org/abs/2311.17982).
+10. **DDIM:** Song, J., Meng, C., & Ermon, S. (2020). *Denoising Diffusion Implicit Models*. International Conference on Learning Representations (ICLR 2021). [arXiv:2010.02502](https://arxiv.org/abs/2010.02502).
+11. **CogVideoX:** Yang, Z., Teng, J., Zheng, W., et al. (2024). *CogVideoX: Text-to-Video Diffusion Models with An Expert Transformer*. International Conference on Learning Representations (ICLR 2025). [arXiv:2408.06072](https://arxiv.org/abs/2408.06072).
+12. **Seedance 1.5 pro:** ByteDance Seed (2025). *Seedance 1.5 pro: A Native Audio-Visual Joint Generation Foundation Model*. [arXiv:2512.13507](https://arxiv.org/abs/2512.13507).
+13. **Seedance 2.0:** ByteDance Seed (2026). *Seedance 2.0: Advancing Video Generation for World Complexity*. [arXiv:2604.14148](https://arxiv.org/abs/2604.14148).
+14. **Nano Banana:** Google (2025). *Introducing Gemini 2.5 Flash Image, our state-of-the-art image model*. [Google Developers Blog](https://developers.googleblog.com/en/introducing-gemini-25-flash-image/).
